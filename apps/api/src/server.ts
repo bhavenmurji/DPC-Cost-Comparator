@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+import comparisonRoutes from './routes/comparison.routes.js'
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -15,20 +16,25 @@ app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    service: 'HealthPartnershipX API',
+    service: 'HealthPartnershipX API - DPC Cost Comparator',
   })
 })
 
 // Root endpoint
 app.get('/', (_req, res) => {
   res.json({
-    message: 'HealthPartnershipX API',
+    message: 'HealthPartnershipX API - DPC Cost Comparator',
     version: '0.1.0',
     endpoints: {
       health: '/health',
+      comparison: '/api/comparison',
+      providers: '/api/comparison/providers',
     },
   })
 })
+
+// API Routes
+app.use('/api/comparison', comparisonRoutes)
 
 // Start server
 app.listen(PORT, () => {

@@ -11,14 +11,213 @@ datasource db {
 
 // User model - Healthcare platform users
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String            @id @default(cuid())
+  email            String            @unique
+  name             String
+  role             Role              @default(USER)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  comparisons      CostComparison[]
+  userProfiles     UserProfile?
 
   @@map("users")
+}
+
+// User profile with health and insurance details
+model UserProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Demographics
+  age                   Int
+  zipCode               String
+  state                 String
+
+  // Current insurance
+  currentInsuranceType  String?  // "employer", "marketplace", "medicaid", etc.
+  currentPremium        Float?
+  currentDeductible     Float?
+  currentOutOfPocket    Float?
+
+  // Health data
+  chronicConditions     String[] // Array of condition codes
+  annualDoctorVisits    Int      @default(4)
+  prescriptionCount     Int      @default(0)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("user_profiles")
+}
+
+// Cost comparison calculation records
+model CostComparison {
+  id                        String   @id @default(cuid())
+  userId                    String
+  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Input parameters
+  zipCode                   String
+  age                       Int
+  chronicConditions         String[]
+  annualDoctorVisits        Int
+  prescriptionCount         Int
+
+  // Traditional insurance costs
+  traditionalPremium        Float
+  traditionalDeductible     Float
+  traditionalOutOfPocket    Float
+  traditionalTotalAnnual    Float
+
+  // DPC + Catastrophic costs
+  dpcMonthlyFee             Float
+  dpcAnnualFee              Float
+  catastrophicPremium       Float
+  catastrophicDeductible    Float
+  catastrophicOutOfPocket   Float
+  dpcTotalAnnual            Float
+
+  // Results
+  annualSavings             Float
+  percentageSavings         Float
+  recommendedPlan           PlanType
+
+  // Matched DPC providers
+  matchedProviders          MatchedProvider[]
+
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@map("cost_comparisons")
+  @@index([userId])
+}
+
+// DPC Provider directory
+model DPCProvider {
+  id                    String            @id @default(cuid())
+
+  // Provider details
+  npi                   String            @unique
+  name                  String
+  practiceName          String
+
+  // Location
+  address               String
+  city                  String
+  state                 String
+  zipCode               String
+  latitude              Float?
+  longitude             Float?
+
+  // Contact
+  phone                 String
+  email                 String?
+  website               String?
+
+  // DPC details
+  monthlyFee            Float
+  familyFee             Float?
+  acceptingPatients     Boolean           @default(true)
+  servicesIncluded      String[]
+
+  // Specialties and certifications
+  specialties           String[]
+  boardCertifications   String[]
+  languages             String[]
+
+  // Ratings
+  rating                Float?
+  reviewCount           Int               @default(0)
+
+  // Integration
+  ribbonHealthId        String?
+  turquoiseHealthId     String?
+
+  matchedProviders      MatchedProvider[]
+
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@map("dpc_providers")
+  @@index([zipCode])
+  @@index([state])
+}
+
+// Matched provider results for a comparison
+model MatchedProvider {
+  id                    String          @id @default(cuid())
+  comparisonId          String
+  comparison            CostComparison  @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+
+  providerId            String
+  provider              DPCProvider     @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  distanceMiles         Float
+  matchScore            Float           // 0-100 score based on location, specialties, etc.
+
+  createdAt             DateTime        @default(now())
+
+  @@map("matched_providers")
+  @@index([comparisonId])
+}
+
+// Insurance plan templates for calculations
+model InsurancePlan {
+  id                    String      @id @default(cuid())
+
+  planType              PlanType
+  planName              String
+  carrier               String
+
+  // Location
+  state                 String
+  availableZipCodes     String[]
+
+  // Costs
+  monthlyPremium        Float
+  annualDeductible      Float
+  maxOutOfPocket        Float
+
+  // Coverage details
+  primaryCareVisits     Int?        // Visits covered before deductible
+  specialistVisits      Int?
+  prescriptionTier1     Float?      // Generic copay
+  prescriptionTier2     Float?      // Preferred brand
+  prescriptionTier3     Float?      // Non-preferred brand
+
+  // Metadata
+  ageMin                Int?
+  ageMax                Int?
+
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@map("insurance_plans")
+  @@index([state])
+  @@index([planType])
+}
+
+// Audit log for HIPAA compliance
+model AuditLog {
+  id            String      @id @default(cuid())
+
+  userId        String?
+  action        String      // "view", "create", "update", "delete", "export"
+  resource      String      // "comparison", "profile", "provider"
+  resourceId    String?
+
+  ipAddress     String?
+  userAgent     String?
+
+  metadata      Json?       // Additional context
+
+  createdAt     DateTime    @default(now())
+
+  @@map("audit_logs")
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 // Role enumeration
@@ -27,4 +226,14 @@ enum Role {
   PROVIDER
   PARTNER
   USER
+}
+
+// Plan type enumeration
+enum PlanType {
+  TRADITIONAL
+  DPC_CATASTROPHIC
+  HIGH_DEDUCTIBLE
+  PPO
+  HMO
+  EPO
 }
