@@ -1,0 +1,29 @@
+services:
+  # Backend API
+  - type: web
+    name: dpc-comparator-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd src/backend && npm install
+    startCommand: cd src/backend && npm run dev
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dpc-database
+          property: connectionString
+
+databases:
+  # PostgreSQL Database
+  - name: dpc-database
+    databaseName: dpc_comparator
+    plan: free
+    region: oregon
