@@ -5,12 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CostComparison } from '@/types';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { ArrowDown, ArrowUp, TrendingDown, DollarSign } from 'lucide-react';
+import { ErrorBoundary } from './ErrorBoundary';
+import { MinimalErrorFallback } from './ErrorFallback';
 
 interface ComparisonDashboardProps {
   comparison: CostComparison;
 }
 
-export function ComparisonDashboard({ comparison }: ComparisonDashboardProps) {
+function ComparisonDashboardContent({ comparison }: ComparisonDashboardProps) {
   const { traditional, dpc, savings, savingsPercentage } = comparison;
   const isSavings = savings > 0;
 
@@ -131,5 +133,13 @@ export function ComparisonDashboard({ comparison }: ComparisonDashboardProps) {
         </Card>
       </div>
     </div>
+  );
+}
+
+export function ComparisonDashboard({ comparison }: ComparisonDashboardProps) {
+  return (
+    <ErrorBoundary level="feature" fallback={MinimalErrorFallback}>
+      <ComparisonDashboardContent comparison={comparison} />
+    </ErrorBoundary>
   );
 }

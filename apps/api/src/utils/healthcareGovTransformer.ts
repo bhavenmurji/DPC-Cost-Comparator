@@ -1,0 +1,344 @@
+/**
+ * Healthcare.gov API Data Transformer
+ *
+ * Transforms Healthcare.gov API responses into our application's data models
+ * and provides mapping between our ComparisonInput and API request formats.
+ */
+
+import {
+  ComparisonInput,
+  CostBreakdown,
+} from '../services/costComparison.service'
+import {
+  PlanSearchRequest,
+  HealthcareGovPlan,
+  HealthcareGovHousehold,
+  HealthcareGovPlace,
+} from '../types/healthcareGov.types'
+
+/**
+ * County FIPS code lookup (expand as needed)
+ * Source: https://www.census.gov/library/reference/code-lists/ansi.html
+ */
+const COUNTY_FIPS_BY_ZIP: Record<string, string> = {
+  // North Carolina examples
+  '27360': '37057', // Davidson County
+  '27701': '37063', // Durham County
+  '27511': '37183', // Wake County
+
+  // California examples
+  '90001': '06037', // Los Angeles County
+  '94102': '06075', // San Francisco County
+  '92101': '06073', // San Diego County
+
+  // New York examples
+  '10001': '36061', // New York County (Manhattan)
+  '11201': '36047', // Kings County (Brooklyn)
+
+  // Texas examples
+  '75201': '48113', // Dallas County
+  '77001': '48201', // Harris County (Houston)
+  '78701': '48453', // Travis County (Austin)
+
+  // Florida examples
+  '33101': '12086', // Miami-Dade County
+  '32801': '12095', // Orange County (Orlando)
+  '33601': '12057', // Hillsborough County (Tampa)
+
+  // Add more as needed...
+}
+
+/**
+ * State abbreviation lookup by ZIP code prefix
+ */
+const STATE_BY_ZIP_PREFIX: Record<string, string> = {
+  '27': 'NC', '28': 'NC', // North Carolina
+  '90': 'CA', '91': 'CA', '92': 'CA', '93': 'CA', '94': 'CA', '95': 'CA', '96': 'CA', // California
+  '10': 'NY', '11': 'NY', '12': 'NY', '13': 'NY', '14': 'NY', // New York
+  '75': 'TX', '76': 'TX', '77': 'TX', '78': 'TX', '79': 'TX', // Texas
+  '32': 'FL', '33': 'FL', '34': 'FL', // Florida
+  // Add more as needed...
+}
+
+/**
+ * Convert our ComparisonInput to Healthcare.gov API Place object
+ */
+export function transformToPlace(input: ComparisonInput): HealthcareGovPlace {
+  const state = input.state || inferStateFromZip(input.zipCode)
+  const countyfips = inferCountyFipsFromZip(input.zipCode)
+
+  return {
+    state,
+    zipcode: input.zipCode,
+    countyfips,
+  }
+}
+
+/**
+ * Convert our ComparisonInput to Healthcare.gov API Household object
+ */
+export function transformToHousehold(
+  input: ComparisonInput,
+  income: number = 50000
+): HealthcareGovHousehold {
+  return {
+    income,
+    people: [
+      {
+        age: input.age,
+        aptc_eligible: true,
+        uses_tobacco: false,
+        gender: 'Male', // Default, could be added to input
+      },
+    ],
+  }
+}
+
+/**
+ * Create complete PlanSearchRequest from ComparisonInput
+ */
+export function transformToPlanSearchRequest(
+  input: ComparisonInput,
+  options: {
+    metalLevel?: string[]
+    year?: number
+    income?: number
+    limit?: number
+  } = {}
+): PlanSearchRequest {
+  const place = transformToPlace(input)
+  const household = transformToHousehold(input, options.income)
+
+  return {
+    household,
+    place,
+    market: 'Individual',
+    year: options.year || new Date().getFullYear(),
+    filter: options.metalLevel ? { metal: options.metalLevel } : undefined,
+    sort: 'premium',
+    order: 'asc',
+    limit: options.limit || 10,
+  }
+}
+
+/**
+ * Extract traditional plan costs from Healthcare.gov plan data
+ */
+export function extractTraditionalCosts(
+  plan: HealthcareGovPlan,
+  input: ComparisonInput
+): Partial<CostBreakdown> {
+  const monthlyPremium = plan.premium.premium_w_credit || plan.premium.premium
+  const annualPremium = monthlyPremium * 12
+
+  // Extract deductible (use individual deductible)
+  const deductible = plan.benefits.deductible.individual || 0
+
+  // Estimate copays based on visit frequency
+  const copayPerVisit = extractCopayAmount(plan.benefits.primary_care_visit)
+  const totalCopays = input.annualDoctorVisits * copayPerVisit
+
+  // Estimate prescription costs
+  const prescriptionCostPerMonth = extractPrescriptionCost(plan.benefits.generic_drugs)
+  const totalPrescriptions = input.prescriptionCount * prescriptionCostPerMonth * 12
+
+  // Out of pocket
+  const outOfPocket = totalCopays + totalPrescriptions
+
+  // Total
+  const total = annualPremium + deductible + outOfPocket
+
+  return {
+    premiums: annualPremium,
+    deductible,
+    copays: totalCopays,
+    prescriptions: totalPrescriptions,
+    outOfPocket,
+    total,
+  }
+}
+
+/**
+ * Extract catastrophic plan costs from Healthcare.gov plan data
+ */
+export function extractCatastrophicCosts(
+  plan: HealthcareGovPlan,
+  dpcMonthlyFee: number
+): {
+  catastrophicPremium: number
+  catastrophicDeductible: number
+  catastrophicOutOfPocket: number
+  dpcAnnualFee: number
+  total: number
+} {
+  const monthlyPremium = plan.premium.premium_w_credit || plan.premium.premium
+  const catastrophicPremium = monthlyPremium * 12
+
+  const catastrophicDeductible = plan.benefits.deductible.individual || 0
+
+  // With DPC, most primary care is covered, minimal out-of-pocket
+  const catastrophicOutOfPocket = 0
+
+  const dpcAnnualFee = dpcMonthlyFee * 12
+
+  const total = catastrophicPremium + dpcAnnualFee + catastrophicOutOfPocket
+
+  return {
+    catastrophicPremium,
+    catastrophicDeductible,
+    catastrophicOutOfPocket,
+    dpcAnnualFee,
+    total,
+  }
+}
+
+/**
+ * Extract copay amount from cost sharing string
+ * Examples: "$35", "$35 copay", "30% coinsurance after deductible"
+ */
+function extractCopayAmount(costSharing?: string): number {
+  if (!costSharing) return 35 // Default copay
+
+  // Extract dollar amount
+  const match = costSharing.match(/\$(\d+)/)
+  if (match) {
+    return parseInt(match[1], 10)
+  }
+
+  // If it's a percentage (coinsurance), estimate based on average visit cost
+  if (costSharing.includes('%')) {
+    const percentMatch = costSharing.match(/(\d+)%/)
+    if (percentMatch) {
+      const percent = parseInt(percentMatch[1], 10)
+      const averageVisitCost = 200 // Average primary care visit
+      return (averageVisitCost * percent) / 100
+    }
+  }
+
+  return 35 // Default fallback
+}
+
+/**
+ * Extract prescription cost from cost sharing string
+ */
+function extractPrescriptionCost(costSharing?: string): number {
+  if (!costSharing) return 30 // Default generic cost
+
+  // Extract dollar amount
+  const match = costSharing.match(/\$(\d+)/)
+  if (match) {
+    return parseInt(match[1], 10)
+  }
+
+  // If it's a percentage, estimate
+  if (costSharing.includes('%')) {
+    const percentMatch = costSharing.match(/(\d+)%/)
+    if (percentMatch) {
+      const percent = parseInt(percentMatch[1], 10)
+      const averageGenericCost = 50
+      return (averageGenericCost * percent) / 100
+    }
+  }
+
+  return 30 // Default fallback
+}
+
+/**
+ * Infer state from ZIP code
+ */
+function inferStateFromZip(zipCode: string): string {
+  const prefix = zipCode.substring(0, 2)
+  return STATE_BY_ZIP_PREFIX[prefix] || 'NC' // Default to NC
+}
+
+/**
+ * Infer county FIPS code from ZIP code
+ */
+function inferCountyFipsFromZip(zipCode: string): string {
+  // Direct lookup
+  if (COUNTY_FIPS_BY_ZIP[zipCode]) {
+    return COUNTY_FIPS_BY_ZIP[zipCode]
+  }
+
+  // Fallback to default by state (use most populous county)
+  const state = inferStateFromZip(zipCode)
+  const stateFipsDefaults: Record<string, string> = {
+    'NC': '37063', // Durham County
+    'CA': '06037', // Los Angeles County
+    'NY': '36061', // New York County
+    'TX': '48201', // Harris County
+    'FL': '12086', // Miami-Dade County
+  }
+
+  return stateFipsDefaults[state] || '37063' // Default to Durham, NC
+}
+
+/**
+ * Calculate DPC fee based on chronic conditions
+ */
+export function calculateDPCFee(chronicConditionCount: number): number {
+  let fee = 75 // Base DPC fee
+
+  // Higher fees for complex patients
+  if (chronicConditionCount > 2) {
+    fee += 25
+  } else if (chronicConditionCount > 0) {
+    fee += 10
+  }
+
+  return fee
+}
+
+/**
+ * Validate Healthcare.gov API response
+ */
+export function validatePlanResponse(plan: HealthcareGovPlan): boolean {
+  return !!(
+    plan.id &&
+    plan.name &&
+    plan.metal_level &&
+    plan.premium &&
+    plan.benefits &&
+    plan.benefits.deductible
+  )
+}
+
+/**
+ * Format plan name for display
+ */
+export function formatPlanName(plan: HealthcareGovPlan): string {
+  return `${plan.issuer.name} - ${plan.name} (${plan.metal_level})`
+}
+
+/**
+ * Get plan details summary
+ */
+export function getPlanSummary(plan: HealthcareGovPlan): string {
+  const premium = plan.premium.premium_w_credit || plan.premium.premium
+  const deductible = plan.benefits.deductible.individual
+  const moop = plan.benefits.maximum_out_of_pocket.individual
+
+  return `Premium: $${premium}/mo | Deductible: $${deductible} | Max OOP: $${moop}`
+}
+
+/**
+ * Lookup county FIPS by ZIP code
+ * This would ideally use a complete database or external API
+ * For now, returns a static lookup table
+ */
+export async function lookupCountyFips(zipCode: string): Promise<string | null> {
+  // TODO: Implement actual county FIPS lookup via external API or database
+  // Options:
+  // 1. US Census Bureau Geocoding API
+  // 2. USPS ZIP Code Lookup API
+  // 3. Local database with ZIP to county mapping
+
+  return COUNTY_FIPS_BY_ZIP[zipCode] || null
+}
+
+/**
+ * Add more ZIP/county mappings to the lookup table
+ */
+export function addCountyFipsMapping(zipCode: string, countyFips: string): void {
+  COUNTY_FIPS_BY_ZIP[zipCode] = countyFips
+}

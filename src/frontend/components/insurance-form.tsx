@@ -6,13 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { InsurancePlan } from '@/types';
 import { formatCurrency } from '@/lib/utils';
+import { ErrorBoundary } from './ErrorBoundary';
+import { MinimalErrorFallback } from './ErrorFallback';
 
 interface InsuranceFormProps {
   plan: InsurancePlan;
   onChange: (plan: InsurancePlan) => void;
 }
 
-export function InsuranceForm({ plan, onChange }: InsuranceFormProps) {
+function InsuranceFormContent({ plan, onChange }: InsuranceFormProps) {
   const handleChange = (field: keyof InsurancePlan, value: string | number) => {
     onChange({
       ...plan,
@@ -118,5 +120,13 @@ export function InsuranceForm({ plan, onChange }: InsuranceFormProps) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+export function InsuranceForm({ plan, onChange }: InsuranceFormProps) {
+  return (
+    <ErrorBoundary level="component" fallback={MinimalErrorFallback}>
+      <InsuranceFormContent plan={plan} onChange={onChange} />
+    </ErrorBoundary>
   );
 }

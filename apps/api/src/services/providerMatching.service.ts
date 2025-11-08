@@ -3,6 +3,13 @@
  * Matches users with nearby DPC providers based on location and needs
  */
 
+import {
+  searchProvidersNearby,
+  getProviderById,
+  type ProviderSearchParams,
+  type ProviderWithDistance,
+} from '../repositories/dpcProvider.repository'
+
 export interface ProviderSearchCriteria {
   zipCode: string
   state: string
@@ -52,14 +59,63 @@ export async function findMatchingProviders(
   criteria: ProviderSearchCriteria,
   limit: number = 10
 ): Promise<MatchedProviderResult[]> {
-  // In production, this would query the database
-  // For now, we'll return mock data with realistic scoring
+  // Check if we should use mock data (for development/testing)
+  if (process.env.USE_MOCK_DATA === 'true') {
+    return findMatchingProvidersMock(criteria, limit)
+  }
 
+  try {
+    // Search database for providers
+    const searchParams: ProviderSearchParams = {
+      zipCode: criteria.zipCode,
+      maxDistanceMiles: criteria.maxDistanceMiles || 50,
+      state: criteria.state,
+      specialties: criteria.specialtiesNeeded,
+      languages: criteria.languagePreference ? [criteria.languagePreference] : undefined,
+      maxMonthlyFee: criteria.maxMonthlyFee,
+      acceptingPatientsOnly: true,
+    }
+
+    const providers = await searchProvidersNearby(searchParams)
+
+    // Calculate match scores for each provider
+    const scoredProviders = providers.map((provider) => {
+      const matchScore = calculateMatchScore(provider, criteria, provider.distanceMiles)
+      const matchReasons = generateMatchReasons(provider, criteria, provider.distanceMiles)
+
+      return {
+        provider: mapProviderToInfo(provider),
+        distanceMiles: provider.distanceMiles,
+        matchScore,
+        matchReasons,
+      }
+    })
+
+    // Sort by match score and limit results
+    const sorted = scoredProviders
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, limit)
+
+    return sorted
+  } catch (error) {
+    console.error('Error searching providers from database:', error)
+    // Fallback to mock data if database query fails
+    return findMatchingProvidersMock(criteria, limit)
+  }
+}
+
+/**
+ * Mock provider matching (fallback for development)
+ */
+function findMatchingProvidersMock(
+  criteria: ProviderSearchCriteria,
+  limit: number = 10
+): MatchedProviderResult[] {
   const mockProviders = generateMockProviders(criteria.state, criteria.zipCode)
 
   // Calculate match scores for each provider
   const scoredProviders = mockProviders.map((provider) => {
-    const distance = calculateDistance(criteria.zipCode, provider.zipCode)
+    const distance = calculateDistanceMock(criteria.zipCode, provider.zipCode)
     const matchScore = calculateMatchScore(provider, criteria, distance)
     const matchReasons = generateMatchReasons(provider, criteria, distance)
 
@@ -80,6 +136,36 @@ export async function findMatchingProviders(
     .slice(0, limit)
 
   return filtered
+}
+
+/**
+ * Map database provider to DPCProviderInfo interface
+ */
+function mapProviderToInfo(provider: ProviderWithDistance): DPCProviderInfo {
+  return {
+    id: provider.id,
+    npi: provider.npi,
+    name: provider.name,
+    practiceName: provider.practiceName,
+    address: provider.address,
+    city: provider.city,
+    state: provider.state,
+    zipCode: provider.zipCode,
+    phone: provider.phone,
+    email: provider.email || undefined,
+    website: provider.website || undefined,
+    monthlyFee: provider.monthlyFee,
+    familyFee: provider.familyFee || undefined,
+    acceptingPatients: provider.acceptingPatients,
+    servicesIncluded: provider.servicesIncluded,
+    specialties: provider.specialties,
+    boardCertifications: provider.boardCertifications,
+    languages: provider.languages,
+    rating: provider.rating || undefined,
+    reviewCount: provider.reviewCount,
+    latitude: provider.latitude || undefined,
+    longitude: provider.longitude || undefined,
+  }
 }
 
 /**
@@ -193,10 +279,10 @@ function generateMatchReasons(
 }
 
 /**
- * Calculate distance between two ZIP codes (simplified)
- * In production, use actual geocoding and distance calculation
+ * Calculate distance between two ZIP codes (mock - for development only)
+ * Real distance calculation is handled by the repository layer using Haversine formula
  */
-function calculateDistance(zipCode1: string, zipCode2: string): number {
+function calculateDistanceMock(zipCode1: string, zipCode2: string): number {
   // Simplified: estimate based on ZIP code proximity
   const diff = Math.abs(parseInt(zipCode1) - parseInt(zipCode2))
 
@@ -303,7 +389,22 @@ function generateMockProviders(state: string, nearZipCode: string): DPCProviderI
  * Get detailed provider information
  */
 export async function getProviderDetails(providerId: string): Promise<DPCProviderInfo | null> {
-  // In production, query database
-  const mockProviders = generateMockProviders('CA', '90001')
-  return mockProviders.find((p) => p.id === providerId) || null
+  // Check if we should use mock data
+  if (process.env.USE_MOCK_DATA === 'true') {
+    const mockProviders = generateMockProviders('CA', '90001')
+    return mockProviders.find((p) => p.id === providerId) || null
+  }
+
+  try {
+    const provider = await getProviderById(providerId)
+    if (!provider) {
+      return null
+    }
+    return mapProviderToInfo(provider)
+  } catch (error) {
+    console.error('Error fetching provider from database:', error)
+    // Fallback to mock data
+    const mockProviders = generateMockProviders('CA', '90001')
+    return mockProviders.find((p) => p.id === providerId) || null
+  }
 }

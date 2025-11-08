@@ -1,18 +1,31 @@
 /**
  * Cost Comparison API Routes
+ * With Zod validation middleware for security hardening
+ * Enhanced with Healthcare.gov API integration
  */
 import { Router } from 'express'
-import { calculateComparison } from '../services/costComparison.service.js'
+import { calculateEnhancedComparison, checkApiAvailability } from '../services/costComparisonEnhanced.service.js'
 import { findMatchingProviders } from '../services/providerMatching.service.js'
+import { validateBody, validateParams } from '../middleware/validation.js'
+import {
+  ComparisonInputSchema,
+  ProviderSearchSchema,
+  ProviderIdSchema,
+} from '../validators/schemas.js'
+import { searchLimiter, publicLimiter } from '../middleware/rateLimiter.js'
 
 const router = Router()
 
 /**
  * POST /api/comparison/calculate
  * Calculate cost comparison between traditional and DPC plans
+ * Now with real Healthcare.gov API data when available
+ * Validates input using Zod schema
+ * Rate limited: 30 requests per minute (computation-heavy operation)
  */
-router.post('/calculate', async (req, res) => {
+router.post('/calculate', searchLimiter, validateBody(ComparisonInputSchema), async (req, res) => {
   try {
+    // Data is already validated and sanitized by middleware
     const {
       age,
       zipCode,
@@ -22,32 +35,28 @@ router.post('/calculate', async (req, res) => {
       prescriptionCount = 0,
       currentPremium,
       currentDeductible,
+      income,
+      year,
     } = req.body
 
-    // Validation
-    if (!age || !zipCode || !state) {
-      return res.status(400).json({
-        error: 'Missing required fields: age, zipCode, state',
-      })
-    }
-
-    if (age < 18 || age > 100) {
-      return res.status(400).json({
-        error: 'Age must be between 18 and 100',
-      })
-    }
-
-    // Calculate comparison
-    const result = await calculateComparison({
-      age,
-      zipCode,
-      state,
-      chronicConditions,
-      annualDoctorVisits,
-      prescriptionCount,
-      currentPremium,
-      currentDeductible,
-    })
+    // Calculate comparison with Healthcare.gov API data
+    const result = await calculateEnhancedComparison(
+      {
+        age,
+        zipCode,
+        state,
+        chronicConditions,
+        annualDoctorVisits,
+        prescriptionCount,
+        currentPremium,
+        currentDeductible,
+      },
+      {
+        income: income || 50000, // Default to median household income
+        year: year || new Date().getFullYear(),
+        useApiData: true, // Always attempt to use real API data
+      }
+    )
 
     // Also find matching providers
     const providers = await findMatchingProviders({
@@ -61,6 +70,8 @@ router.post('/calculate', async (req, res) => {
       success: true,
       comparison: result,
       providers,
+      dataSource: result.dataSource, // Include data source information
+      planDetails: result.planDetails, // Include actual plan details if available
     })
   } catch (error) {
     console.error('Error calculating comparison:', error)
@@ -73,9 +84,12 @@ router.post('/calculate', async (req, res) => {
 /**
  * POST /api/comparison/providers
  * Find matching DPC providers
+ * Validates input using Zod schema
+ * Rate limited: 30 requests per minute (search operation)
  */
-router.post('/providers', async (req, res) => {
+router.post('/providers', searchLimiter, validateBody(ProviderSearchSchema), async (req, res) => {
   try {
+    // Data is already validated and sanitized by middleware
     const {
       zipCode,
       state,
@@ -86,13 +100,6 @@ router.post('/providers', async (req, res) => {
       maxMonthlyFee,
       limit = 10,
     } = req.body
-
-    // Validation
-    if (!zipCode || !state) {
-      return res.status(400).json({
-        error: 'Missing required fields: zipCode, state',
-      })
-    }
 
     const providers = await findMatchingProviders(
       {
@@ -123,9 +130,12 @@ router.post('/providers', async (req, res) => {
 /**
  * GET /api/comparison/providers/:id
  * Get detailed provider information
+ * Validates provider ID format
+ * Rate limited: 300 requests per 15 minutes (public endpoint)
  */
-router.get('/providers/:id', async (req, res) => {
+router.get('/providers/:id', publicLimiter, validateParams(ProviderIdSchema), async (req, res) => {
   try {
+    // ID is already validated by middleware
     const { id } = req.params
 
     // In production, query database
@@ -140,6 +150,27 @@ router.get('/providers/:id', async (req, res) => {
     console.error('Error fetching provider:', error)
     res.status(500).json({
       error: 'Failed to fetch provider details',
+    })
+  }
+})
+
+/**
+ * GET /api/comparison/api-status
+ * Check Healthcare.gov API availability status
+ * Public endpoint to help users understand data sources
+ */
+router.get('/api-status', publicLimiter, async (_req, res) => {
+  try {
+    const status = checkApiAvailability()
+    res.json({
+      success: true,
+      healthcareGov: status,
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('Error checking API status:', error)
+    res.status(500).json({
+      error: 'Failed to check API status',
     })
   }
 })

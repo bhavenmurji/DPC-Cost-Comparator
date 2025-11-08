@@ -3,6 +3,7 @@
  * JWT-based authentication for API endpoints
  */
 import { Request, Response, NextFunction } from 'express'
+import jwt from 'jsonwebtoken'
 
 export interface AuthUser {
   id: string
@@ -26,21 +27,27 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token = authHeader.substring(7)
 
   try {
-    // In production: Verify JWT token
-    // const decoded = jwt.verify(token, process.env.JWT_SECRET!)
-    // req.user = decoded as AuthUser
-
-    // For now, accept any token for testing
-    ;(req as any).user = {
-      id: 'test-user-id',
-      email: 'test@example.com',
-      role: 'USER',
+    // Verify JWT token
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured')
     }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as AuthUser
+    ;(req as any).user = decoded
 
     next()
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({
+        error: 'Unauthorized - Token expired',
+      })
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({
+        error: 'Unauthorized - Invalid token',
+      })
+    }
     return res.status(401).json({
-      error: 'Unauthorized - Invalid token',
+      error: 'Unauthorized - Authentication failed',
     })
   }
 }
@@ -54,14 +61,13 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7)
     try {
-      // In production: Verify JWT token
-      ;(req as any).user = {
-        id: 'test-user-id',
-        email: 'test@example.com',
-        role: 'USER',
+      // Verify JWT token if available
+      if (process.env.JWT_SECRET) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as AuthUser
+        ;(req as any).user = decoded
       }
     } catch (error) {
-      // Invalid token, continue without user
+      // Invalid token, continue without user (optional auth)
     }
   }
 

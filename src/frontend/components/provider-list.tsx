@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { DPCProvider } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { MapPin, Phone, Globe, Users, CheckCircle, XCircle } from 'lucide-react';
+import { ErrorBoundary } from './ErrorBoundary';
+import { MinimalErrorFallback } from './ErrorFallback';
 
 interface ProviderListProps {
   providers: DPCProvider[];
 }
 
-export function ProviderList({ providers }: ProviderListProps) {
+function ProviderListContent({ providers }: ProviderListProps) {
   if (providers.length === 0) {
     return (
       <Card>
@@ -124,5 +126,13 @@ export function ProviderList({ providers }: ProviderListProps) {
         </Card>
       ))}
     </div>
+  );
+}
+
+export function ProviderList({ providers }: ProviderListProps) {
+  return (
+    <ErrorBoundary level="feature" fallback={MinimalErrorFallback}>
+      <ProviderListContent providers={providers} />
+    </ErrorBoundary>
   );
 }

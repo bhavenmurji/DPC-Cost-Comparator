@@ -1,10 +1,15 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import comparisonRoutes from './routes/comparison.routes.js'
+import { configureHealthcareGovApi } from './config/healthcareGov.config.js'
 
 const app = express()
 const PORT = process.env.PORT || 4000
+
+// Initialize Healthcare.gov API client
+configureHealthcareGovApi()
 
 // Middleware
 app.use(helmet())

@@ -3,6 +3,7 @@
  * Logs all access to protected health information
  */
 import { Request, Response, NextFunction } from 'express'
+import { logger } from '../../../src/backend/utils/logger'
 
 export interface AuditLogEntry {
   timestamp: string
@@ -51,15 +52,81 @@ export function auditMiddleware(req: Request, res: Response, next: NextFunction)
 }
 
 /**
+ * Sanitize sensitive data before logging
+ */
+function sanitizeMetadata(metadata?: Record<string, any>): Record<string, any> {
+  if (!metadata) return {}
+
+  const sensitiveFields = [
+    'password',
+    'token',
+    'ssn',
+    'socialSecurityNumber',
+    'dateOfBirth',
+    'dob',
+    'medicalRecordNumber',
+    'mrn',
+    'insurancePolicyNumber',
+    'policyNumber',
+    'chronicConditions',
+    'healthConditions',
+    'diagnosis',
+    'prescription',
+    'creditCard',
+    'bankAccount',
+    'apiKey',
+    'secret',
+  ]
+
+  const sanitized = { ...metadata }
+
+  for (const field of sensitiveFields) {
+    if (field in sanitized) {
+      sanitized[field] = '[REDACTED]'
+    }
+  }
+
+  // Recursively sanitize nested objects
+  for (const key in sanitized) {
+    if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
+      sanitized[key] = sanitizeMetadata(sanitized[key])
+    }
+  }
+
+  return sanitized
+}
+
+/**
  * Log audit entry
- * In production, this should write to database and secure log storage
+ * HIPAA-compliant: Uses winston logger instead of console.log
+ * Sensitive data is sanitized before logging
  */
 function logAuditEntry(entry: AuditLogEntry) {
-  // In production: Write to database
-  // await prisma.auditLog.create({ data: entry })
+  // Sanitize metadata to prevent PHI leakage
+  const sanitizedEntry = {
+    ...entry,
+    metadata: sanitizeMetadata(entry.metadata),
+  }
 
-  // For now, log to console with special format
-  console.log('[AUDIT]', JSON.stringify(entry))
+  // Log to winston (file-based, encrypted, with rotation)
+  // SECURITY: Never use console.log for PHI - violates HIPAA
+  logger.info('[AUDIT]', sanitizedEntry)
+
+  // TODO: Write to database using Prisma/pg client for permanent audit trail
+  // This ensures HIPAA compliance with 6-year retention requirement
+  // await prisma.auditLog.create({
+  //   data: {
+  //     userId: entry.userId,
+  //     action: entry.action,
+  //     resource: entry.resource,
+  //     resourceId: entry.resourceId,
+  //     ipAddress: entry.ipAddress,
+  //     userAgent: entry.userAgent,
+  //     statusCode: entry.statusCode,
+  //     metadata: sanitizedEntry.metadata,
+  //     timestamp: new Date(entry.timestamp),
+  //   },
+  // })
 }
 
 /**

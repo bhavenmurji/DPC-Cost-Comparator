@@ -1,19 +1,17 @@
 import { Router } from 'express';
 import { authenticate, optionalAuthenticate } from '../middleware/auth';
 import { calculateCostComparison } from '../services/cost-calculator';
+import { validateBody } from '../middleware/validation';
+import { CostComparisonCalculateSchema } from '../validators/schemas';
 
 const router = Router();
 
 // POST /api/v1/cost-comparison/calculate (public with optional auth)
-router.post('/calculate', optionalAuthenticate, async (req, res) => {
+// Validates input using Zod schema for security
+router.post('/calculate', optionalAuthenticate, validateBody(CostComparisonCalculateSchema), async (req, res) => {
   try {
+    // Data is already validated and sanitized by middleware
     const { currentPlan, usage, profile } = req.body;
-
-    if (!currentPlan || !usage || !profile) {
-      return res.status(400).json({
-        error: 'Missing required fields: currentPlan, usage, and profile are required'
-      });
-    }
 
     const calculationResult = calculateCostComparison(currentPlan, usage, profile);
 
@@ -40,15 +38,10 @@ router.post('/calculate', optionalAuthenticate, async (req, res) => {
 });
 
 // Legacy route for backwards compatibility
-router.post('/', optionalAuthenticate, async (req, res) => {
+router.post('/', optionalAuthenticate, validateBody(CostComparisonCalculateSchema), async (req, res) => {
   try {
+    // Data is already validated and sanitized by middleware
     const { currentPlan, usage, profile } = req.body;
-
-    if (!currentPlan || !usage || !profile) {
-      return res.status(400).json({
-        error: 'Missing required fields: currentPlan, usage, and profile are required'
-      });
-    }
 
     const calculationResult = calculateCostComparison(currentPlan, usage, profile);
 

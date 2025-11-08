@@ -11,14 +11,16 @@ datasource db {
 
 // User model - Healthcare platform users
 model User {
-  id               String            @id @default(cuid())
-  email            String            @unique
+  id               String              @id @default(cuid())
+  email            String              @unique
   name             String
-  role             Role              @default(USER)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  role             Role                @default(USER)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
   comparisons      CostComparison[]
   userProfiles     UserProfile?
+  medications      UserMedication[]
+  savedComparisons SavedComparison[]
 
   @@map("users")
 }
@@ -95,10 +97,10 @@ model CostComparison {
 
 // DPC Provider directory
 model DPCProvider {
-  id                    String            @id @default(cuid())
+  id                    String                @id @default(cuid())
 
   // Provider details
-  npi                   String            @unique
+  npi                   String                @unique
   name                  String
   practiceName          String
 
@@ -118,7 +120,7 @@ model DPCProvider {
   // DPC details
   monthlyFee            Float
   familyFee             Float?
-  acceptingPatients     Boolean           @default(true)
+  acceptingPatients     Boolean               @default(true)
   servicesIncluded      String[]
 
   // Specialties and certifications
@@ -128,16 +130,17 @@ model DPCProvider {
 
   // Ratings
   rating                Float?
-  reviewCount           Int               @default(0)
+  reviewCount           Int                   @default(0)
 
   // Integration
   ribbonHealthId        String?
   turquoiseHealthId     String?
 
   matchedProviders      MatchedProvider[]
+  providerSource        DPCProviderSource?
 
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
 
   @@map("dpc_providers")
   @@index([zipCode])
@@ -228,6 +231,196 @@ enum Role {
   USER
 }
 
+// Prescription pricing cache (GoodRx, Costco, Walmart)
+model PrescriptionPrice {
+  id                String      @id @default(cuid())
+
+  // Drug identification
+  drugName          String      // Standardized drug name
+  genericName       String?     // Generic equivalent
+  dosage            String      // "10mg", "500mg", etc.
+  form              String      // "tablet", "capsule", "liquid"
+  quantity          Int         // 30, 60, 90 day supply
+
+  // Location
+  zipCode           String
+  pharmacyName      String      // "CVS", "Walgreens", "Costco", "Walmart"
+  pharmacyAddress   String?
+
+  // Pricing
+  price             Float       // Cash price
+  memberPrice       Float?      // Membership price (Costco)
+  couponPrice       Float?      // GoodRx coupon price
+  couponUrl         String?     // Direct link to coupon
+
+  // Data source
+  source            PriceSource // Where the price came from
+  sourceId          String?     // External ID from source
+
+  // Cache management
+  cachedAt          DateTime    @default(now())
+  expiresAt         DateTime    // Typically 7-30 days
+
+  @@map("prescription_prices")
+  @@index([drugName, zipCode])
+  @@index([expiresAt])
+}
+
+// Lab test pricing (LabCorp, Quest, etc.)
+model LabTestPrice {
+  id                String      @id @default(cuid())
+
+  // Test identification
+  testName          String      // "Basic Metabolic Panel", "CBC"
+  cptCode           String?     // CPT billing code
+  loincCode         String?     // LOINC standard code
+  category          String?     // "Blood", "Urine", "Imaging"
+
+  // Pricing
+  retailPrice       Float?      // Standard price
+  cashPrice         Float       // Self-pay price
+  dpcPrice          Float?      // DPC affiliate price
+  insuranceEstimate Float?      // Typical insurance cost
+
+  // Provider
+  labProvider       LabProvider // LabCorp, Quest, etc.
+  labLocation       String?     // City, State
+
+  // Data freshness
+  lastUpdated       DateTime    @default(now())
+  verified          Boolean     @default(false)
+
+  @@map("lab_test_prices")
+  @@index([testName])
+  @@index([cptCode])
+}
+
+// Pharmacy savings programs (Walmart $4, manufacturer coupons)
+model PharmacySavingsProgram {
+  id                String      @id @default(cuid())
+
+  // Program details
+  programName       String      // "Walmart $4", "Costco Membership"
+  pharmacyChain     String      // "Walmart", "Costco", "Kroger"
+  programType       ProgramType
+
+  // Eligibility
+  requiresMembership Boolean    @default(false)
+  membershipCost     Float?     // Annual cost if required
+  membershipUrl      String?
+
+  // Covered medications
+  medications        PharmacySavingsMedication[]
+
+  // Program status
+  active             Boolean    @default(true)
+  lastVerified       DateTime   @default(now())
+
+  @@map("pharmacy_savings_programs")
+}
+
+// Medications covered by savings programs
+model PharmacySavingsMedication {
+  id                String                  @id @default(cuid())
+
+  programId         String
+  program           PharmacySavingsProgram  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  // Medication
+  drugName          String
+  genericName       String
+  dosage            String
+  form              String
+
+  // Pricing
+  price30Day        Float?
+  price60Day        Float?
+  price90Day        Float?
+
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  @@map("pharmacy_savings_medications")
+  @@index([programId])
+  @@index([drugName])
+}
+
+// DPC Provider data source tracking
+model DPCProviderSource {
+  id                String      @id @default(cuid())
+
+  providerId        String      @unique
+  provider          DPCProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  // Source information
+  source            String      // "dpc_frontier", "atlas_md", "manual"
+  sourceUrl         String?     // Original listing URL
+  sourceId          String?     // External ID
+
+  // Data quality
+  verified          Boolean     @default(false)
+  lastScraped       DateTime?
+  lastVerified      DateTime?
+  dataQualityScore  Float?      // 0-100
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@map("dpc_provider_sources")
+}
+
+// User saved medications list
+model UserMedication {
+  id                String      @id @default(cuid())
+
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Medication details
+  drugName          String
+  dosage            String
+  frequency         String      // "daily", "twice daily", etc.
+  quantity          Int         // Monthly quantity
+
+  // Cost tracking
+  currentCost       Float?
+  lowestCashPrice   Float?
+  insurancePrice    Float?
+
+  active            Boolean     @default(true)
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@map("user_medications")
+  @@index([userId])
+}
+
+// User saved comparisons
+model SavedComparison {
+  id                String      @id @default(cuid())
+
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Comparison snapshot
+  comparisonData    Json        // Full comparison result
+  name              String?     // User-given name
+  notes             String?
+
+  // Metadata
+  favorite          Boolean     @default(false)
+  sharedPublicly    Boolean     @default(false)
+  shareToken        String?     @unique
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@map("saved_comparisons")
+  @@index([userId])
+  @@index([shareToken])
+}
+
 // Plan type enumeration
 enum PlanType {
   TRADITIONAL
@@ -236,4 +429,33 @@ enum PlanType {
   PPO
   HMO
   EPO
+}
+
+// Prescription price source
+enum PriceSource {
+  GOODRX
+  COSTCO
+  WALMART
+  CVS
+  WALGREENS
+  MANUFACTURER
+  MANUAL
+}
+
+// Lab provider
+enum LabProvider {
+  LABCORP
+  QUEST
+  ANYLABTESTNOW
+  HEALTH_GORILLA
+  DPC_AFFILIATE
+  OTHER
+}
+
+// Pharmacy savings program type
+enum ProgramType {
+  GENERIC_DISCOUNT      // Walmart $4, Kroger generics
+  MEMBERSHIP_DISCOUNT   // Costco
+  MANUFACTURER_COUPON   // Brand-name assistance
+  PATIENT_ASSISTANCE    // Low-income programs
 }
