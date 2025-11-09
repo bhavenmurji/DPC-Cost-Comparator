@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { providerService, ProviderSearchResult } from '../services/providerService'
 import ProviderCard from '../components/ProviderCard'
+import ProviderMap from '../components/ProviderMap'
 
 export default function ProviderSearch() {
   const [zipCode, setZipCode] = useState('')
@@ -10,6 +11,8 @@ export default function ProviderSearch() {
   const [error, setError] = useState<string | null>(null)
   const [searched, setSearched] = useState(false)
   const [totalProviders, setTotalProviders] = useState<number | null>(null)
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null)
+  const [showMap, setShowMap] = useState(true)
 
   // Load provider stats on mount
   useEffect(() => {
@@ -47,6 +50,14 @@ export default function ProviderSearch() {
       })
 
       setResults(response.providers)
+
+      // Set map center from API response
+      if (response.coordinates && response.coordinates.lat && response.coordinates.lng) {
+        setMapCenter({
+          lat: response.coordinates.lat,
+          lng: response.coordinates.lng,
+        })
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to search providers')
       console.error('Search error:', err)
@@ -173,11 +184,52 @@ export default function ProviderSearch() {
           )}
 
           {!loading && results.length > 0 && (
-            <div style={styles.results}>
-              {results.map((result, index) => (
-                <ProviderCard key={result.provider?.id || `provider-${index}`} result={result} />
-              ))}
-            </div>
+            <>
+              {/* View toggle */}
+              <div style={styles.viewToggle}>
+                <button
+                  onClick={() => setShowMap(true)}
+                  style={{
+                    ...styles.toggleButton,
+                    ...(showMap ? styles.toggleButtonActive : {}),
+                  }}
+                >
+                  🗺️ Map View
+                </button>
+                <button
+                  onClick={() => setShowMap(false)}
+                  style={{
+                    ...styles.toggleButton,
+                    ...(!showMap ? styles.toggleButtonActive : {}),
+                  }}
+                >
+                  📋 List View
+                </button>
+              </div>
+
+              {/* Map view */}
+              {showMap && mapCenter && (
+                <div style={styles.mapContainer}>
+                  <ProviderMap
+                    results={results}
+                    center={mapCenter}
+                    onProviderSelect={(provider) => {
+                      console.log('Selected provider:', provider)
+                      // Scroll to provider card or show details
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* List view */}
+              {!showMap && (
+                <div style={styles.results}>
+                  {results.map((result, index) => (
+                    <ProviderCard key={result.provider?.id || `provider-${index}`} result={result} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           {!searched && !loading && (
@@ -421,5 +473,33 @@ const styles: Record<string, React.CSSProperties> = {
   results: {
     display: 'flex',
     flexDirection: 'column',
+  },
+  viewToggle: {
+    display: 'flex',
+    gap: '0.5rem',
+    marginBottom: '1.5rem',
+    padding: '0.25rem',
+    backgroundColor: '#f3f4f6',
+    borderRadius: '8px',
+  },
+  toggleButton: {
+    flex: 1,
+    padding: '0.75rem 1rem',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    backgroundColor: 'transparent',
+    color: '#6b7280',
+    transition: 'all 0.2s',
+  },
+  toggleButtonActive: {
+    backgroundColor: '#fff',
+    color: '#2563eb',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  },
+  mapContainer: {
+    marginBottom: '2rem',
   },
 }
