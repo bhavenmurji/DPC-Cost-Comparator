@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import ComparisonForm from './components/ComparisonForm'
 import ComparisonResults from './components/ComparisonResults'
+import ProviderSearch from './pages/ProviderSearch'
 
 function App() {
+  const location = useLocation()
   const [results, setResults] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,32 +47,62 @@ function App() {
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', fontFamily: 'system-ui' }}>
       <header style={styles.header}>
         <div style={styles.headerContent}>
-          <h1 style={styles.title}>HealthPartnershipX</h1>
-          <p style={styles.subtitle}>DPC Cost Comparison Calculator</p>
+          <div>
+            <h1 style={styles.title}>HealthPartnershipX</h1>
+            <p style={styles.subtitle}>DPC Cost Comparison Calculator</p>
+          </div>
+          <nav style={styles.nav}>
+            <Link
+              to="/"
+              style={{
+                ...styles.navLink,
+                ...(location.pathname === '/' ? styles.navLinkActive : {}),
+              }}
+            >
+              Cost Calculator
+            </Link>
+            <Link
+              to="/providers"
+              style={{
+                ...styles.navLink,
+                ...(location.pathname === '/providers' ? styles.navLinkActive : {}),
+              }}
+            >
+              Find Providers
+            </Link>
+          </nav>
         </div>
       </header>
 
-      <main style={styles.main}>
-        {error && (
-          <div style={styles.error}>
-            <strong>Error:</strong> {error}
-          </div>
-        )}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <main style={styles.main}>
+              {error && (
+                <div style={styles.error}>
+                  <strong>Error:</strong> {error}
+                </div>
+              )}
 
-        {!results ? (
-          <ComparisonForm onSubmit={handleSubmit} loading={loading} />
-        ) : (
-          <>
-            <button onClick={handleReset} style={styles.resetButton}>
-              ← Start New Comparison
-            </button>
-            <ComparisonResults
-              results={results.comparison}
-              providers={results.providers}
-            />
-          </>
-        )}
-      </main>
+              {!results ? (
+                <ComparisonForm onSubmit={handleSubmit} loading={loading} />
+              ) : (
+                <>
+                  <button onClick={handleReset} style={styles.resetButton}>
+                    ← Start New Comparison
+                  </button>
+                  <ComparisonResults
+                    results={results.comparison}
+                    providers={results.providers}
+                  />
+                </>
+              )}
+            </main>
+          }
+        />
+        <Route path="/providers" element={<ProviderSearch />} />
+      </Routes>
 
       <footer style={styles.footer}>
         <p>© 2025 HealthPartnershipX | For informational purposes only</p>
@@ -88,6 +121,9 @@ const styles: Record<string, React.CSSProperties> = {
   headerContent: {
     maxWidth: '1200px',
     margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     fontSize: '2rem',
@@ -98,6 +134,22 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '1.125rem',
     opacity: 0.9,
     margin: '0.5rem 0 0 0',
+  },
+  nav: {
+    display: 'flex',
+    gap: '1rem',
+  },
+  navLink: {
+    color: '#fff',
+    textDecoration: 'none',
+    padding: '0.5rem 1rem',
+    borderRadius: '4px',
+    fontSize: '1rem',
+    fontWeight: '500',
+    transition: 'background-color 0.2s',
+  },
+  navLinkActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   main: {
     padding: '2rem 1rem',

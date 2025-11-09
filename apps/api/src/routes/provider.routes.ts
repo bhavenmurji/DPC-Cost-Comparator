@@ -46,6 +46,7 @@ async function getZipCodeCoordinates(zipCode: string): Promise<{ lat: number; ln
   const zipCodeMap: Record<string, { lat: number; lng: number }> = {
     '10001': { lat: 40.7506, lng: -73.9971 }, // New York, NY
     '90001': { lat: 33.9731, lng: -118.2479 }, // Los Angeles, CA
+    '90210': { lat: 34.0901, lng: -118.4065 }, // Beverly Hills, CA
     '60601': { lat: 41.8859, lng: -87.6189 }, // Chicago, IL
     '77001': { lat: 29.7504, lng: -95.3698 }, // Houston, TX
     '85001': { lat: 33.4484, lng: -112.074 }, // Phoenix, AZ
@@ -244,8 +245,8 @@ router.get('/:id', async (req, res) => {
 router.get('/stats/summary', async (req, res) => {
   try {
     const totalProviders = await prisma.dPCProvider.count()
-    const verifiedProviders = await prisma.dPCProvider.count({
-      where: { verified: true },
+    const acceptingPatients = await prisma.dPCProvider.count({
+      where: { acceptingPatients: true },
     })
 
     const providersByState = await prisma.dPCProvider.groupBy({
@@ -270,13 +271,13 @@ router.get('/stats/summary', async (req, res) => {
     res.json({
       success: true,
       stats: {
-        total: totalProviders,
-        verified: verifiedProviders,
-        averageMonthlyFee: averageFee._avg.monthlyFee,
-        topStates: providersByState.map((s) => ({
-          state: s.state,
-          count: s._count.id,
-        })),
+        totalProviders: totalProviders,
+        acceptingPatientsCount: acceptingPatients,
+        averageMonthlyFee: averageFee._avg.monthlyFee || 0,
+        providersByState: providersByState.reduce((acc, s) => {
+          acc[s.state] = s._count.id
+          return acc
+        }, {} as Record<string, number>),
       },
     })
   } catch (error) {
