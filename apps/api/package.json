@@ -12,7 +12,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "scrape:dpc": "tsx ../../scripts/scrape-dpc-providers.ts",
-    "scrape:dpc:test": "tsx ../../scripts/scrape-dpc-providers.ts --limit 10"
+    "scrape:dpc:test": "tsx ../../scripts/scrape-dpc-providers.ts --limit 10",
+    "import:walmart": "tsx ../../scripts/import-walmart-programs.ts"
   },
   "dependencies": {
     "express": "^4.18.2",

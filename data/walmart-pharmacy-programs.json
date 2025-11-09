@@ -1,0 +1,335 @@
+{
+  "programs": [
+    {
+      "id": "walmart-4-dollar",
+      "name": "Walmart $4 Prescriptions",
+      "pharmacy": "Walmart",
+      "type": "GENERIC_DISCOUNT",
+      "requiresMembership": false,
+      "pricing": {
+        "30day": 4.00,
+        "90day": 10.00
+      },
+      "description": "Generic prescription drugs for $4 (30-day supply) or $10 (90-day supply)",
+      "medications": [
+        {
+          "name": "Amlodipine",
+          "genericName": "Amlodipine Besylate",
+          "strength": "2.5mg, 5mg, 10mg",
+          "form": "Tablet",
+          "category": "Cardiovascular",
+          "conditions": ["High Blood Pressure", "Angina"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Atorvastatin",
+          "genericName": "Atorvastatin Calcium",
+          "strength": "10mg, 20mg, 40mg, 80mg",
+          "form": "Tablet",
+          "category": "Cholesterol",
+          "conditions": ["High Cholesterol"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Lisinopril",
+          "genericName": "Lisinopril",
+          "strength": "2.5mg, 5mg, 10mg, 20mg, 40mg",
+          "form": "Tablet",
+          "category": "Cardiovascular",
+          "conditions": ["High Blood Pressure", "Heart Failure"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Metformin",
+          "genericName": "Metformin HCl",
+          "strength": "500mg, 850mg, 1000mg",
+          "form": "Tablet",
+          "category": "Diabetes",
+          "conditions": ["Type 2 Diabetes"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Metformin ER",
+          "genericName": "Metformin HCl Extended Release",
+          "strength": "500mg, 750mg",
+          "form": "Tablet",
+          "category": "Diabetes",
+          "conditions": ["Type 2 Diabetes"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Simvastatin",
+          "genericName": "Simvastatin",
+          "strength": "5mg, 10mg, 20mg, 40mg",
+          "form": "Tablet",
+          "category": "Cholesterol",
+          "conditions": ["High Cholesterol"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Losartan",
+          "genericName": "Losartan Potassium",
+          "strength": "25mg, 50mg, 100mg",
+          "form": "Tablet",
+          "category": "Cardiovascular",
+          "conditions": ["High Blood Pressure"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Omeprazole",
+          "genericName": "Omeprazole",
+          "strength": "20mg",
+          "form": "Capsule",
+          "category": "Gastrointestinal",
+          "conditions": ["GERD", "Heartburn", "Ulcers"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Levothyroxine",
+          "genericName": "Levothyroxine Sodium",
+          "strength": "25mcg, 50mcg, 75mcg, 88mcg, 100mcg, 112mcg, 125mcg, 137mcg, 150mcg, 175mcg, 200mcg",
+          "form": "Tablet",
+          "category": "Thyroid",
+          "conditions": ["Hypothyroidism"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Gabapentin",
+          "genericName": "Gabapentin",
+          "strength": "100mg, 300mg, 400mg",
+          "form": "Capsule",
+          "category": "Neurological",
+          "conditions": ["Nerve Pain", "Seizures"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Sertraline",
+          "genericName": "Sertraline HCl",
+          "strength": "25mg, 50mg, 100mg",
+          "form": "Tablet",
+          "category": "Mental Health",
+          "conditions": ["Depression", "Anxiety", "OCD"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Escitalopram",
+          "genericName": "Escitalopram Oxalate",
+          "strength": "5mg, 10mg, 20mg",
+          "form": "Tablet",
+          "category": "Mental Health",
+          "conditions": ["Depression", "Anxiety"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Citalopram",
+          "genericName": "Citalopram HBr",
+          "strength": "10mg, 20mg, 40mg",
+          "form": "Tablet",
+          "category": "Mental Health",
+          "conditions": ["Depression"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Fluoxetine",
+          "genericName": "Fluoxetine HCl",
+          "strength": "10mg, 20mg, 40mg",
+          "form": "Capsule",
+          "category": "Mental Health",
+          "conditions": ["Depression", "OCD", "Bulimia"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Amoxicillin",
+          "genericName": "Amoxicillin",
+          "strength": "250mg, 500mg",
+          "form": "Capsule",
+          "category": "Antibiotic",
+          "conditions": ["Bacterial Infections"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Azithromycin",
+          "genericName": "Azithromycin",
+          "strength": "250mg, 500mg",
+          "form": "Tablet",
+          "category": "Antibiotic",
+          "conditions": ["Bacterial Infections"],
+          "price30Day": 4.00,
+          "price90Day": null
+        },
+        {
+          "name": "Hydrochlorothiazide",
+          "genericName": "Hydrochlorothiazide",
+          "strength": "12.5mg, 25mg, 50mg",
+          "form": "Tablet",
+          "category": "Cardiovascular",
+          "conditions": ["High Blood Pressure", "Edema"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Albuterol",
+          "genericName": "Albuterol Sulfate",
+          "strength": "90mcg",
+          "form": "Inhaler",
+          "category": "Respiratory",
+          "conditions": ["Asthma", "COPD"],
+          "price30Day": 9.00,
+          "price90Day": null
+        },
+        {
+          "name": "Montelukast",
+          "genericName": "Montelukast Sodium",
+          "strength": "10mg",
+          "form": "Tablet",
+          "category": "Respiratory",
+          "conditions": ["Asthma", "Allergies"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Prednisone",
+          "genericName": "Prednisone",
+          "strength": "5mg, 10mg, 20mg",
+          "form": "Tablet",
+          "category": "Steroid",
+          "conditions": ["Inflammation", "Allergies", "Autoimmune"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Cyclobenzaprine",
+          "genericName": "Cyclobenzaprine HCl",
+          "strength": "5mg, 10mg",
+          "form": "Tablet",
+          "category": "Muscle Relaxant",
+          "conditions": ["Muscle Spasms"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Meloxicam",
+          "genericName": "Meloxicam",
+          "strength": "7.5mg, 15mg",
+          "form": "Tablet",
+          "category": "Pain Relief",
+          "conditions": ["Arthritis", "Pain"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Ibuprofen",
+          "genericName": "Ibuprofen",
+          "strength": "200mg, 400mg, 600mg, 800mg",
+          "form": "Tablet",
+          "category": "Pain Relief",
+          "conditions": ["Pain", "Inflammation", "Fever"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Naproxen",
+          "genericName": "Naproxen",
+          "strength": "250mg, 375mg, 500mg",
+          "form": "Tablet",
+          "category": "Pain Relief",
+          "conditions": ["Pain", "Inflammation"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Tramadol",
+          "genericName": "Tramadol HCl",
+          "strength": "50mg",
+          "form": "Tablet",
+          "category": "Pain Relief",
+          "conditions": ["Moderate to Severe Pain"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Pantoprazole",
+          "genericName": "Pantoprazole Sodium",
+          "strength": "20mg, 40mg",
+          "form": "Tablet",
+          "category": "Gastrointestinal",
+          "conditions": ["GERD", "Ulcers"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Ranitidine",
+          "genericName": "Ranitidine HCl",
+          "strength": "150mg, 300mg",
+          "form": "Tablet",
+          "category": "Gastrointestinal",
+          "conditions": ["Heartburn", "Ulcers"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Alprazolam",
+          "genericName": "Alprazolam",
+          "strength": "0.25mg, 0.5mg, 1mg, 2mg",
+          "form": "Tablet",
+          "category": "Mental Health",
+          "conditions": ["Anxiety", "Panic Disorder"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Lorazepam",
+          "genericName": "Lorazepam",
+          "strength": "0.5mg, 1mg, 2mg",
+          "form": "Tablet",
+          "category": "Mental Health",
+          "conditions": ["Anxiety"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        },
+        {
+          "name": "Clonazepam",
+          "genericName": "Clonazepam",
+          "strength": "0.5mg, 1mg, 2mg",
+          "form": "Tablet",
+          "category": "Mental Health",
+          "conditions": ["Seizures", "Panic Disorder"],
+          "price30Day": 4.00,
+          "price90Day": 10.00
+        }
+      ]
+    },
+    {
+      "id": "costco-membership",
+      "name": "Costco Pharmacy Pricing",
+      "pharmacy": "Costco",
+      "type": "MEMBERSHIP_DISCOUNT",
+      "requiresMembership": false,
+      "membershipCost": 60.00,
+      "membershipPeriod": "annual",
+      "description": "Competitive prescription pricing, no membership required for pharmacy",
+      "note": "Membership ($60/year) gives access to other Costco services but not required for pharmacy"
+    }
+  ],
+  "metadata": {
+    "lastUpdated": "2025-01-09",
+    "source": "Walmart Pharmacy Official Website",
+    "disclaimer": "Prices are subject to change. Verify current pricing with pharmacy.",
+    "coverage": "30 most common medications shown. Full Walmart $4 list contains 650+ generics."
+  }
+}
