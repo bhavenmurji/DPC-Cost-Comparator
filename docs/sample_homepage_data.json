@@ -1,0 +1,46 @@
+{
+  "practices": [
+    {
+      "pracKey": "-LVFVcIO_wXSNTlNpU5L",
+      "id": "yrenwbyllxeg",
+      "lat": 36.2126122,
+      "lng": -115.2501872,
+      "kind": "pure",
+      "onsite": false
+    },
+    {
+      "pracKey": "-LVFVcZ2WT5pFbhTkbsw",
+      "id": "upnidijmmzpl",
+      "lat": 29.733223,
+      "lng": -95.8455632,
+      "kind": "pure",
+      "onsite": false
+    },
+    {
+      "pracKey": "-LVFVchrpdKgQa5utA9A",
+      "id": "rdhhmhqodmfn",
+      "lat": 40.7511885,
+      "lng": -96.6650942,
+      "kind": "hybrid",
+      "onsite": false
+    },
+    {
+      "pracKey": "-LVFVclbfzM5v7uoaAv5",
+      "id": "zmuvolfmcocx",
+      "lat": 42.0350511,
+      "lng": -97.4661127,
+      "kind": "hybrid",
+      "onsite": false
+    },
+    {
+      "pracKey": "-LVFVcpgMEs2zT8M1_Bw",
+      "id": "bcfohenwbbpi",
+      "lat": 41.8867506,
+      "lng": -103.6640883,
+      "kind": "hybrid",
+      "onsite": false
+    }
+  ],
+  "cached": true,
+  "totalPractices": 2734
+}

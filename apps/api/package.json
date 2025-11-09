@@ -10,7 +10,9 @@
     "test": "vitest",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "scrape:dpc": "tsx ../../scripts/scrape-dpc-providers.ts",
+    "scrape:dpc:test": "tsx ../../scripts/scrape-dpc-providers.ts --limit 10"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -22,7 +24,8 @@
     "jsonwebtoken": "^9.0.2",
     "bcryptjs": "^2.4.3",
     "winston": "^3.11.0",
-    "axios": "^1.6.7"
+    "axios": "^1.6.7",
+    "cheerio": "^1.0.0-rc.12"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

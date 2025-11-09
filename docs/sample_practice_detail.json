@@ -1,0 +1,45 @@
+{
+  "id": "yrenwbyllxeg",
+  "pracKey": "-LVFVcIO_wXSNTlNpU5L",
+  "name": "Quill Health DPC",
+  "legalName": "Quill Health DPC",
+  "kind": "pure",
+  "verified": true,
+  "published": true,
+  "address": {
+    "line1": "2851 N Tenaya Way",
+    "line2": "Ste. 203",
+    "city": "Las Vegas",
+    "region": "NV",
+    "postal": "89128",
+    "country": "US"
+  },
+  "phone": "702-886-1292",
+  "website": "http://www.quillhealthdpc.com",
+  "deadWebsite": false,
+  "lat": 36.2126122,
+  "lng": -115.2501872,
+  "openDate": "2019-01-01",
+  "acceptedAges": "",
+  "description": "",
+  "people": [
+    {
+      "fn": "Jose",
+      "ln": "Bacala",
+      "cert": "MD",
+      "specialty": "fam",
+      "prof": "",
+      "panelStatus": "open"
+    }
+  ],
+  "cellCommunication": true,
+  "emailCommunication": true,
+  "messageCommunication": true,
+  "labDiscounts": true,
+  "radiologyDiscounts": true,
+  "dispensing": true,
+  "homeVisits": false,
+  "mobile": false,
+  "onsite": false,
+  "hasSaved": true
+}
