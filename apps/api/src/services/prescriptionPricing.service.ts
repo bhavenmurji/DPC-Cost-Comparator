@@ -369,10 +369,9 @@ export class PrescriptionPricingService {
     const medications = await prisma.pharmacySavingsMedication.findMany({
       where: {
         OR: [
-          { medicationName: { contains: searchTerm, mode: 'insensitive' } },
+          { drugName: { contains: searchTerm, mode: 'insensitive' } },
           { genericName: { contains: searchTerm, mode: 'insensitive' } },
         ],
-        active: true,
       },
       include: {
         program: true,
@@ -381,12 +380,10 @@ export class PrescriptionPricingService {
     })
 
     return medications.map((med) => ({
-      medicationName: med.medicationName,
+      medicationName: med.drugName,
       genericName: med.genericName,
-      strength: med.strength || undefined,
+      strength: med.dosage || undefined,
       form: med.form || undefined,
-      category: med.category || undefined,
-      conditions: med.conditions || undefined,
       pricing: {
         walmart4Dollar: {
           price30Day: med.price30Day,

@@ -142,7 +142,7 @@ router.get('/walmart-program', async (req, res) => {
         medications: {
           take: 100,
           orderBy: {
-            medicationName: 'asc',
+            drugName: 'asc',
           },
         },
       },
@@ -166,12 +166,10 @@ router.get('/walmart-program', async (req, res) => {
         medicationCount: program.medications.length,
         medications: program.medications.map((med) => ({
           id: med.id,
-          name: med.medicationName,
+          name: med.drugName,
           genericName: med.genericName,
-          strength: med.strength,
+          strength: med.dosage,
           form: med.form,
-          category: med.category,
-          conditions: med.conditions,
           price30Day: med.price30Day,
           price90Day: med.price90Day,
         })),
