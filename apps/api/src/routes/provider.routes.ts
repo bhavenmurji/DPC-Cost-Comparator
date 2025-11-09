@@ -1,0 +1,291 @@
+import { Router } from 'express'
+import { PrismaClient } from '@prisma/client'
+import { z } from 'zod'
+
+const router = Router()
+const prisma = new PrismaClient()
+
+// Validation schemas
+const providerSearchSchema = z.object({
+  zipCode: z.string().regex(/^\d{5}$/),
+  radius: z.number().min(1).max(100).optional().default(25),
+  limit: z.number().min(1).max(100).optional().default(20),
+  offset: z.number().min(0).optional().default(0),
+})
+
+const providerByIdSchema = z.object({
+  id: z.string(),
+})
+
+/**
+ * Calculate distance between two points using Haversine formula
+ */
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 3959 // Earth's radius in miles
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLon = ((lon2 - lon1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+/**
+ * Simple geocoding approximation for ZIP codes
+ * In production, use a real geocoding API
+ */
+async function getZipCodeCoordinates(zipCode: string): Promise<{ lat: number; lng: number } | null> {
+  // This is a simplified version - in production, use a geocoding service
+  // For now, we'll use a basic lookup or return null to search all providers
+
+  // Common ZIP code coordinates (add more as needed)
+  const zipCodeMap: Record<string, { lat: number; lng: number }> = {
+    '10001': { lat: 40.7506, lng: -73.9971 }, // New York, NY
+    '90001': { lat: 33.9731, lng: -118.2479 }, // Los Angeles, CA
+    '60601': { lat: 41.8859, lng: -87.6189 }, // Chicago, IL
+    '77001': { lat: 29.7504, lng: -95.3698 }, // Houston, TX
+    '85001': { lat: 33.4484, lng: -112.074 }, // Phoenix, AZ
+    '19101': { lat: 39.9526, lng: -75.1652 }, // Philadelphia, PA
+    '78201': { lat: 29.4241, lng: -98.4936 }, // San Antonio, TX
+    '92101': { lat: 32.7157, lng: -117.1611 }, // San Diego, CA
+    '75201': { lat: 32.7767, lng: -96.797 }, // Dallas, TX
+    '95101': { lat: 37.3382, lng: -121.8863 }, // San Jose, CA
+  }
+
+  return zipCodeMap[zipCode] || null
+}
+
+/**
+ * GET /api/providers/search
+ * Search for DPC providers by location
+ */
+router.get('/search', async (req, res) => {
+  try {
+    const params = providerSearchSchema.parse({
+      zipCode: req.query.zipCode,
+      radius: req.query.radius ? Number(req.query.radius) : undefined,
+      limit: req.query.limit ? Number(req.query.limit) : undefined,
+      offset: req.query.offset ? Number(req.query.offset) : undefined,
+    })
+
+    // Get coordinates for ZIP code
+    const coordinates = await getZipCodeCoordinates(params.zipCode)
+
+    let providers
+
+    if (coordinates) {
+      // Search within radius
+      const allProviders = await prisma.dPCProvider.findMany({
+        include: {
+          providerSource: true,
+        },
+      })
+
+      // Calculate distances and filter
+      providers = allProviders
+        .map((provider) => {
+          const distance = calculateDistance(
+            coordinates.lat,
+            coordinates.lng,
+            provider.latitude || 0,
+            provider.longitude || 0
+          )
+          return { ...provider, distance }
+        })
+        .filter((provider) => provider.distance <= params.radius)
+        .sort((a, b) => a.distance - b.distance)
+        .slice(params.offset, params.offset + params.limit)
+    } else {
+      // No coordinates available, return all providers with pagination
+      providers = await prisma.dPCProvider.findMany({
+        skip: params.offset,
+        take: params.limit,
+        include: {
+          providerSource: true,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      })
+    }
+
+    res.json({
+      success: true,
+      count: providers.length,
+      searchParams: params,
+      coordinates,
+      providers: providers.map((p) => ({
+        id: p.id,
+        name: p.name,
+        address: p.address,
+        city: p.city,
+        state: p.state,
+        zipCode: p.zipCode,
+        phone: p.phone,
+        website: p.website,
+        monthlyFee: p.monthlyFee,
+        servicesOffered: p.servicesOffered,
+        rating: p.rating,
+        verified: p.verified,
+        distance: 'distance' in p ? p.distance : null,
+        location: {
+          latitude: p.latitude,
+          longitude: p.longitude,
+        },
+        dataSource: p.providerSource
+          ? {
+              source: p.providerSource.source,
+              lastScraped: p.providerSource.lastScraped,
+              dataQualityScore: p.providerSource.dataQualityScore,
+            }
+          : null,
+      })),
+    })
+  } catch (error) {
+    console.error('Error searching providers:', error)
+
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request parameters',
+        details: error.errors,
+      })
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to search providers',
+    })
+  }
+})
+
+/**
+ * GET /api/providers/:id
+ * Get a single provider by ID
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const params = providerByIdSchema.parse({
+      id: req.params.id,
+    })
+
+    const provider = await prisma.dPCProvider.findUnique({
+      where: { id: params.id },
+      include: {
+        providerSource: true,
+      },
+    })
+
+    if (!provider) {
+      return res.status(404).json({
+        success: false,
+        error: 'Provider not found',
+      })
+    }
+
+    res.json({
+      success: true,
+      provider: {
+        id: provider.id,
+        name: provider.name,
+        address: provider.address,
+        city: provider.city,
+        state: provider.state,
+        zipCode: provider.zipCode,
+        phone: provider.phone,
+        website: provider.website,
+        monthlyFee: provider.monthlyFee,
+        servicesOffered: provider.servicesOffered,
+        rating: provider.rating,
+        verified: provider.verified,
+        location: {
+          latitude: provider.latitude,
+          longitude: provider.longitude,
+        },
+        dataSource: provider.providerSource
+          ? {
+              source: provider.providerSource.source,
+              sourceUrl: provider.providerSource.sourceUrl,
+              lastScraped: provider.providerSource.lastScraped,
+              dataQualityScore: provider.providerSource.dataQualityScore,
+              verified: provider.providerSource.verified,
+            }
+          : null,
+        createdAt: provider.createdAt,
+        updatedAt: provider.updatedAt,
+      },
+    })
+  } catch (error) {
+    console.error('Error fetching provider:', error)
+
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid provider ID',
+        details: error.errors,
+      })
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch provider',
+    })
+  }
+})
+
+/**
+ * GET /api/providers/stats
+ * Get provider statistics
+ */
+router.get('/stats/summary', async (req, res) => {
+  try {
+    const totalProviders = await prisma.dPCProvider.count()
+    const verifiedProviders = await prisma.dPCProvider.count({
+      where: { verified: true },
+    })
+
+    const providersByState = await prisma.dPCProvider.groupBy({
+      by: ['state'],
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _count: {
+          id: 'desc',
+        },
+      },
+      take: 10,
+    })
+
+    const averageFee = await prisma.dPCProvider.aggregate({
+      _avg: {
+        monthlyFee: true,
+      },
+    })
+
+    res.json({
+      success: true,
+      stats: {
+        total: totalProviders,
+        verified: verifiedProviders,
+        averageMonthlyFee: averageFee._avg.monthlyFee,
+        topStates: providersByState.map((s) => ({
+          state: s.state,
+          count: s._count.id,
+        })),
+      },
+    })
+  } catch (error) {
+    console.error('Error fetching provider stats:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch provider statistics',
+    })
+  }
+})
+
+export default router

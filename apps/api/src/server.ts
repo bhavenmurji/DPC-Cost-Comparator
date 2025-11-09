@@ -3,6 +3,8 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import comparisonRoutes from './routes/comparison.routes.js'
+import providerRoutes from './routes/provider.routes.js'
+import prescriptionRoutes from './routes/prescription.routes.js'
 import { configureHealthcareGovApi } from './config/healthcareGov.config.js'
 
 const app = express()
@@ -28,18 +30,21 @@ app.get('/health', (_req, res) => {
 // Root endpoint
 app.get('/', (_req, res) => {
   res.json({
-    message: 'HealthPartnershipX API - DPC Cost Comparator',
-    version: '0.1.0',
+    message: 'Ignite Health Partnerships API - DPC Cost Comparator',
+    version: '0.2.0',
     endpoints: {
       health: '/health',
       comparison: '/api/comparison',
-      providers: '/api/comparison/providers',
+      providers: '/api/providers',
+      prescriptions: '/api/prescriptions',
     },
   })
 })
 
 // API Routes
 app.use('/api/comparison', comparisonRoutes)
+app.use('/api/providers', providerRoutes)
+app.use('/api/prescriptions', prescriptionRoutes)
 
 // Start server
 app.listen(PORT, () => {
