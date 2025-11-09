@@ -344,21 +344,16 @@ export class PrescriptionPricingService {
         create: {
           id: `walmart-4-${med.name.toLowerCase().replace(/\s+/g, '-')}`,
           programId: program.id,
-          medicationName: med.name,
+          drugName: med.name,
           genericName: med.genericName,
-          strength: med.strength,
+          dosage: med.strength,
           form: med.form,
-          category: med.category,
-          conditions: med.conditions,
           price30Day: med.price30Day,
           price90Day: med.price90Day,
-          active: true,
-          lastVerified: new Date(),
         },
         update: {
           price30Day: med.price30Day,
           price90Day: med.price90Day,
-          lastVerified: new Date(),
         },
       })
       importedCount++
