@@ -73,7 +73,7 @@ echo "Step 1/7: Starting PostgreSQL with Docker Compose"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-docker-compose up -d
+docker compose up -d
 sleep 5  # Wait for PostgreSQL to start
 
 # Verify PostgreSQL is running

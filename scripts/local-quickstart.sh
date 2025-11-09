@@ -10,7 +10,7 @@ echo ""
 
 # Step 1: Start PostgreSQL
 echo "📦 Starting PostgreSQL..."
-docker-compose up -d
+docker compose up -d
 sleep 5
 
 # Step 2: Run migrations
