@@ -1,13 +1,7 @@
 // API Client Service
 // Centralized API communication with error handling
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
-
-interface ApiResponse<T> {
-  success: boolean
-  data?: T
-  error?: string
-}
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000'
 
 class ApiClient {
   private baseUrl: string

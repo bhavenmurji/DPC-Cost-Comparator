@@ -1,4 +1,12 @@
 import { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { Checkbox } from './ui/checkbox'
+import PrescriptionPricing from './PrescriptionPricing'
+import LabTestPricing from './LabTestPricing'
 
 interface ComparisonFormData {
   age: number
@@ -7,6 +15,8 @@ interface ComparisonFormData {
   chronicConditions: string[]
   annualDoctorVisits: number
   prescriptionCount: number
+  prescriptionCosts?: number
+  labTestCosts?: number
 }
 
 interface ComparisonFormProps {
@@ -22,7 +32,11 @@ export default function ComparisonForm({ onSubmit, loading = false }: Comparison
     chronicConditions: [],
     annualDoctorVisits: 4,
     prescriptionCount: 0,
+    prescriptionCosts: 0,
+    labTestCosts: 0,
   })
+
+  const [showAdvancedPricing, setShowAdvancedPricing] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,210 +70,162 @@ export default function ComparisonForm({ onSubmit, loading = false }: Comparison
   ]
 
   return (
-    <form onSubmit={handleSubmit} style={styles.form}>
-      <h2 style={styles.heading}>DPC Cost Comparison Calculator</h2>
-      <p style={styles.description}>
-        Compare the costs of traditional insurance vs. Direct Primary Care + Catastrophic coverage
-      </p>
+    <form onSubmit={handleSubmit} className="max-w-4xl mx-auto p-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-3xl">DPC Cost Comparison Calculator</CardTitle>
+          <CardDescription>
+            Compare the costs of traditional insurance vs. Direct Primary Care + Catastrophic coverage
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-8">
+          {/* Personal Information */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">Personal Information</h3>
 
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Personal Information</h3>
+            <div className="space-y-2">
+              <Label htmlFor="age">Age</Label>
+              <Input
+                id="age"
+                type="number"
+                min="18"
+                max="100"
+                value={formData.age}
+                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) })}
+                required
+              />
+            </div>
 
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Age</label>
-          <input
-            type="number"
-            min="18"
-            max="100"
-            value={formData.age}
-            onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) })}
-            style={styles.input}
-            required
-          />
-        </div>
-
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>ZIP Code</label>
-            <input
-              type="text"
-              pattern="[0-9]{5}"
-              value={formData.zipCode}
-              onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-              style={styles.input}
-              placeholder="12345"
-              required
-            />
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>State</label>
-            <select
-              value={formData.state}
-              onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-              style={styles.select}
-              required
-            >
-              <option value="">Select state</option>
-              {states.map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Health Information</h3>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Annual Doctor Visits</label>
-          <input
-            type="number"
-            min="0"
-            max="50"
-            value={formData.annualDoctorVisits}
-            onChange={(e) =>
-              setFormData({ ...formData, annualDoctorVisits: parseInt(e.target.value) })
-            }
-            style={styles.input}
-          />
-          <span style={styles.hint}>How many times do you visit a doctor per year?</span>
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Monthly Prescriptions</label>
-          <input
-            type="number"
-            min="0"
-            max="20"
-            value={formData.prescriptionCount}
-            onChange={(e) =>
-              setFormData({ ...formData, prescriptionCount: parseInt(e.target.value) })
-            }
-            style={styles.input}
-          />
-          <span style={styles.hint}>How many prescription medications do you take regularly?</span>
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Chronic Conditions (select all that apply)</label>
-          <div style={styles.checkboxGroup}>
-            {commonConditions.map((condition) => (
-              <label key={condition} style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={formData.chronicConditions.includes(condition)}
-                  onChange={() => handleConditionToggle(condition)}
-                  style={styles.checkbox}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="zipCode">ZIP Code</Label>
+                <Input
+                  id="zipCode"
+                  type="text"
+                  pattern="[0-9]{5}"
+                  value={formData.zipCode}
+                  onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                  placeholder="12345"
+                  required
                 />
-                {condition}
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
+              </div>
 
-      <button type="submit" disabled={loading} style={styles.button}>
-        {loading ? 'Calculating...' : 'Compare Costs'}
-      </button>
+              <div className="space-y-2">
+                <Label htmlFor="state">State</Label>
+                <Select
+                  value={formData.state}
+                  onValueChange={(value) => setFormData({ ...formData, state: value })}
+                >
+                  <SelectTrigger id="state">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {states.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Health Information */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">Health Information</h3>
+
+            <div className="space-y-2">
+              <Label htmlFor="doctorVisits">Annual Doctor Visits</Label>
+              <Input
+                id="doctorVisits"
+                type="number"
+                min="0"
+                max="50"
+                value={formData.annualDoctorVisits}
+                onChange={(e) =>
+                  setFormData({ ...formData, annualDoctorVisits: parseInt(e.target.value) })
+                }
+              />
+              <p className="text-sm text-muted-foreground">
+                How many times do you visit a doctor per year?
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="prescriptions">Monthly Prescriptions</Label>
+              <Input
+                id="prescriptions"
+                type="number"
+                min="0"
+                max="20"
+                value={formData.prescriptionCount}
+                onChange={(e) =>
+                  setFormData({ ...formData, prescriptionCount: parseInt(e.target.value) })
+                }
+              />
+              <p className="text-sm text-muted-foreground">
+                How many prescription medications do you take regularly?
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Chronic Conditions (select all that apply)</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {commonConditions.map((condition) => (
+                  <div key={condition} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={condition}
+                      checked={formData.chronicConditions.includes(condition)}
+                      onCheckedChange={() => handleConditionToggle(condition)}
+                    />
+                    <label
+                      htmlFor={condition}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {condition}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Detailed Cost Analysis */}
+          {formData.zipCode && formData.zipCode.length === 5 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">Detailed Cost Analysis (Optional)</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAdvancedPricing(!showAdvancedPricing)}
+                >
+                  {showAdvancedPricing ? '− Hide' : '+ Show'} Detailed Pricing
+                </Button>
+              </div>
+
+              {showAdvancedPricing && (
+                <div className="space-y-4">
+                  <PrescriptionPricing
+                    zipCode={formData.zipCode}
+                    onPricesUpdate={(cost) => setFormData({ ...formData, prescriptionCosts: cost })}
+                  />
+                  <LabTestPricing
+                    zipCode={formData.zipCode}
+                    onPricesUpdate={(cost) => setFormData({ ...formData, labTestCosts: cost })}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <Button type="submit" disabled={loading} className="w-full" size="lg">
+            {loading ? 'Calculating...' : 'Compare Costs'}
+          </Button>
+        </CardContent>
+      </Card>
     </form>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  form: {
-    maxWidth: '800px',
-    margin: '0 auto',
-    padding: '2rem',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  },
-  heading: {
-    fontSize: '1.75rem',
-    fontWeight: 'bold',
-    marginBottom: '0.5rem',
-    color: '#1a1a1a',
-  },
-  description: {
-    color: '#666',
-    marginBottom: '2rem',
-  },
-  section: {
-    marginBottom: '2rem',
-  },
-  sectionTitle: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    marginBottom: '1rem',
-    color: '#333',
-  },
-  formGroup: {
-    marginBottom: '1.5rem',
-  },
-  formRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '1rem',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '0.5rem',
-    fontWeight: '500',
-    color: '#333',
-  },
-  input: {
-    width: '100%',
-    padding: '0.75rem',
-    fontSize: '1rem',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    boxSizing: 'border-box',
-  },
-  select: {
-    width: '100%',
-    padding: '0.75rem',
-    fontSize: '1rem',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    backgroundColor: '#fff',
-    boxSizing: 'border-box',
-  },
-  hint: {
-    display: 'block',
-    marginTop: '0.25rem',
-    fontSize: '0.875rem',
-    color: '#666',
-  },
-  checkboxGroup: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '0.75rem',
-  },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    cursor: 'pointer',
-  },
-  checkbox: {
-    width: '18px',
-    height: '18px',
-    cursor: 'pointer',
-  },
-  button: {
-    width: '100%',
-    padding: '1rem',
-    fontSize: '1.125rem',
-    fontWeight: '600',
-    color: '#fff',
-    backgroundColor: '#2563eb',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-  },
 }

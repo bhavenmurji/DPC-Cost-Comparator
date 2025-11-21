@@ -75,13 +75,59 @@ export function estimateCoordinatesFromZip(zipCode: string): Coordinates | null 
   const firstDigit = Math.floor(zip / 10000)
   const secondDigit = Math.floor((zip % 10000) / 1000)
 
-  // Approximate latitude (30-50°N for continental US)
-  let latitude = 40 - (firstDigit - 4) * 2
-  latitude += (secondDigit - 5) * 0.5
+  // Better approximations for major ZIP code regions
+  let latitude: number
+  let longitude: number
 
-  // Approximate longitude (-70 to -125°W for continental US)
-  let longitude = -95 + (firstDigit - 4) * 5
-  longitude += (secondDigit - 5) * 1.5
+  if (firstDigit === 0) {
+    // 00000-09999: Northeast (NY, NJ, CT, MA, etc.)
+    latitude = 40.7 + (secondDigit - 5) * 0.8
+    longitude = -74 - (secondDigit - 5) * 1.2
+  } else if (firstDigit === 1) {
+    // 10000-19999: Mid-Atlantic (PA, DE, MD)
+    latitude = 40 + (secondDigit - 5) * 0.6
+    longitude = -76 - (secondDigit - 5) * 1
+  } else if (firstDigit === 2) {
+    // 20000-29999: Southeast (DC, VA, WV)
+    latitude = 38 + (secondDigit - 5) * 0.5
+    longitude = -78 - (secondDigit - 5) * 0.8
+  } else if (firstDigit === 3) {
+    // 30000-39999: Southeast (GA, FL, AL)
+    latitude = 33 + (secondDigit - 5) * 0.4
+    longitude = -84 - (secondDigit - 5) * 0.6
+  } else if (firstDigit >= 4 && firstDigit <= 6) {
+    // 40000-69999: Midwest (OH, IN, IL, MI, WI, MN)
+    latitude = 40 - (firstDigit - 4) * 1.5
+    longitude = -86 - (firstDigit - 4) * 4
+  } else if (firstDigit >= 7 && firstDigit <= 8) {
+    // 70000-89999: South/Central/Mountain (TX, CO, MT, etc.)
+    latitude = 35 + (firstDigit - 7) * 3
+    longitude = -95 - (firstDigit - 7) * 12
+  } else {
+    // 90000-99999: Pacific (CA, OR, WA, AK, HI)
+    // More accurate California ZIP code estimation
+    if (zip >= 90000 && zip <= 96199) {
+      // Southern California (90000-96199)
+      latitude = 34 + ((zip % 10000) / 10000) * 2
+      longitude = -118 - ((zip % 10000) / 10000) * 4
+    } else if (zip >= 96200 && zip <= 96999) {
+      // Northern California / Oregon border
+      latitude = 40 + ((zip % 1000) / 1000) * 2
+      longitude = -122 - ((zip % 1000) / 1000) * 2
+    } else if (zip >= 97000 && zip <= 97999) {
+      // Oregon
+      latitude = 44 + ((zip % 1000) / 1000) * 2
+      longitude = -122 - ((zip % 1000) / 1000) * 2
+    } else if (zip >= 98000 && zip <= 99499) {
+      // Washington
+      latitude = 47 + ((zip % 1000) / 1000) * 2
+      longitude = -122 - ((zip % 1000) / 1000) * 2
+    } else {
+      // Alaska and Hawaii
+      latitude = 37 + (secondDigit - 5) * 0.8
+      longitude = -119 - (secondDigit - 5) * 1.5
+    }
+  }
 
   return {
     latitude: Math.max(24, Math.min(50, latitude)),

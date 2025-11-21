@@ -1,8 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import ComparisonForm from './components/ComparisonForm'
 import ComparisonResults from './components/ComparisonResults'
 import ProviderSearch from './pages/ProviderSearch'
+import ProviderDetails from './pages/ProviderDetails'
+import UserPreferences from './components/UserPreferences'
+import LosAngelesDPC from './pages/LosAngelesDPC'
+import SanFranciscoDPC from './pages/SanFranciscoDPC'
+import SanDiegoDPC from './pages/SanDiegoDPC'
+import NewYorkDPC from './pages/NewYorkDPC'
+import ChicagoDPC from './pages/ChicagoDPC'
+import { initAnalytics, analytics } from './utils/analytics'
 
 function App() {
   const location = useLocation()
@@ -10,12 +18,22 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Initialize analytics on app mount
+  useEffect(() => {
+    initAnalytics()
+  }, [])
+
+  // Track page views on route change
+  useEffect(() => {
+    analytics.trackPageView(location.pathname)
+  }, [location.pathname])
+
   const handleSubmit = async (formData: any) => {
     setLoading(true)
     setError(null)
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+      const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000'
       const response = await fetch(`${API_URL}/api/comparison/calculate`, {
         method: 'POST',
         headers: {
@@ -30,6 +48,20 @@ function App() {
 
       const data = await response.json()
       setResults(data)
+
+      // Track successful comparison calculation
+      if (data.comparison) {
+        analytics.trackComparisonCalculated({
+          zipCode: formData.zipCode,
+          state: formData.state,
+          age: formData.age,
+          traditionalCost: data.comparison.traditionalTotalAnnual,
+          dpcCost: data.comparison.dpcTotalAnnual,
+          savings: data.comparison.annualSavings,
+          recommendedPlan: data.comparison.recommendedPlan,
+          dataSource: data.comparison.dataSource?.traditional || 'unknown',
+        })
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
       console.error('Error:', err)
@@ -70,6 +102,15 @@ function App() {
             >
               Find Providers
             </Link>
+            <Link
+              to="/preferences"
+              style={{
+                ...styles.navLink,
+                ...(location.pathname === '/preferences' ? styles.navLinkActive : {}),
+              }}
+            >
+              My Preferences
+            </Link>
           </nav>
         </div>
       </header>
@@ -93,7 +134,10 @@ function App() {
                     ← Start New Comparison
                   </button>
                   <ComparisonResults
-                    results={results.comparison}
+                    results={{
+                      ...results.comparison,
+                      dataSource: results.dataSource || results.comparison.dataSource,
+                    }}
                     providers={results.providers}
                   />
                 </>
@@ -102,6 +146,15 @@ function App() {
           }
         />
         <Route path="/providers" element={<ProviderSearch />} />
+        <Route path="/providers/:id" element={<ProviderDetails />} />
+        <Route path="/preferences" element={<UserPreferences />} />
+
+        {/* City Landing Pages */}
+        <Route path="/los-angeles-dpc" element={<LosAngelesDPC />} />
+        <Route path="/san-francisco-dpc" element={<SanFranciscoDPC />} />
+        <Route path="/san-diego-dpc" element={<SanDiegoDPC />} />
+        <Route path="/new-york-dpc" element={<NewYorkDPC />} />
+        <Route path="/chicago-dpc" element={<ChicagoDPC />} />
       </Routes>
 
       <footer style={styles.footer}>

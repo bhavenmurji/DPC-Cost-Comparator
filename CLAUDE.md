@@ -1,352 +1,279 @@
-# Claude Code Configuration - SPARC Development Environment
+# CLAUDE.md
 
-## 🚨 CRITICAL: CONCURRENT EXECUTION & FILE MANAGEMENT
-
-**ABSOLUTE RULES**:
-1. ALL operations MUST be concurrent/parallel in a single message
-2. **NEVER save working files, text/mds and tests to the root folder**
-3. ALWAYS organize files in appropriate subdirectories
-4. **USE CLAUDE CODE'S TASK TOOL** for spawning agents concurrently, not just MCP
-
-### ⚡ GOLDEN RULE: "1 MESSAGE = ALL RELATED OPERATIONS"
-
-**MANDATORY PATTERNS:**
-- **TodoWrite**: ALWAYS batch ALL todos in ONE call (5-10+ todos minimum)
-- **Task tool (Claude Code)**: ALWAYS spawn ALL agents in ONE message with full instructions
-- **File operations**: ALWAYS batch ALL reads/writes/edits in ONE message
-- **Bash commands**: ALWAYS batch ALL terminal operations in ONE message
-- **Memory operations**: ALWAYS batch ALL memory store/retrieve in ONE message
-
-### 🎯 CRITICAL: Claude Code Task Tool for Agent Execution
-
-**Claude Code's Task tool is the PRIMARY way to spawn agents:**
-```javascript
-// ✅ CORRECT: Use Claude Code's Task tool for parallel agent execution
-[Single Message]:
-  Task("Research agent", "Analyze requirements and patterns...", "researcher")
-  Task("Coder agent", "Implement core features...", "coder")
-  Task("Tester agent", "Create comprehensive tests...", "tester")
-  Task("Reviewer agent", "Review code quality...", "reviewer")
-  Task("Architect agent", "Design system architecture...", "system-architect")
-```
-
-**MCP tools are ONLY for coordination setup:**
-- `mcp__claude-flow__swarm_init` - Initialize coordination topology
-- `mcp__claude-flow__agent_spawn` - Define agent types for coordination
-- `mcp__claude-flow__task_orchestrate` - Orchestrate high-level workflows
-
-### 📁 File Organization Rules
-
-**NEVER save to root folder. Use these directories:**
-- `/src` - Source code files
-- `/tests` - Test files
-- `/docs` - Documentation and markdown files
-- `/config` - Configuration files
-- `/scripts` - Utility scripts
-- `/examples` - Example code
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Completion) methodology with Claude-Flow orchestration for systematic Test-Driven Development.
+**Ignite Health Partnerships** is a healthcare cost comparison platform that helps Americans compare Direct Primary Care (DPC) + Catastrophic insurance against Traditional Insurance plans. The platform provides real-time cost comparisons using actual data from Healthcare.gov, DPC provider directories, and pharmacy pricing programs.
 
-## SPARC Commands
+## Development Commands
 
-### Core Commands
-- `npx claude-flow sparc modes` - List available modes
-- `npx claude-flow sparc run <mode> "<task>"` - Execute specific mode
-- `npx claude-flow sparc tdd "<feature>"` - Run complete TDD workflow
-- `npx claude-flow sparc info <mode>` - Get mode details
-
-### Batchtools Commands
-- `npx claude-flow sparc batch <modes> "<task>"` - Parallel execution
-- `npx claude-flow sparc pipeline "<task>"` - Full pipeline processing
-- `npx claude-flow sparc concurrent <mode> "<tasks-file>"` - Multi-task processing
-
-### Build Commands
-- `npm run build` - Build project
-- `npm run test` - Run tests
-- `npm run lint` - Linting
-- `npm run typecheck` - Type checking
-
-## SPARC Workflow Phases
-
-1. **Specification** - Requirements analysis (`sparc run spec-pseudocode`)
-2. **Pseudocode** - Algorithm design (`sparc run spec-pseudocode`)
-3. **Architecture** - System design (`sparc run architect`)
-4. **Refinement** - TDD implementation (`sparc tdd`)
-5. **Completion** - Integration (`sparc run integration`)
-
-## Code Style & Best Practices
-
-- **Modular Design**: Files under 500 lines
-- **Environment Safety**: Never hardcode secrets
-- **Test-First**: Write tests before implementation
-- **Clean Architecture**: Separate concerns
-- **Documentation**: Keep updated
-
-## 🚀 Available Agents (54 Total)
-
-### Core Development
-`coder`, `reviewer`, `tester`, `planner`, `researcher`
-
-### Swarm Coordination
-`hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`, `collective-intelligence-coordinator`, `swarm-memory-manager`
-
-### Consensus & Distributed
-`byzantine-coordinator`, `raft-manager`, `gossip-coordinator`, `consensus-builder`, `crdt-synchronizer`, `quorum-manager`, `security-manager`
-
-### Performance & Optimization
-`perf-analyzer`, `performance-benchmarker`, `task-orchestrator`, `memory-coordinator`, `smart-agent`
-
-### GitHub & Repository
-`github-modes`, `pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`, `workflow-automation`, `project-board-sync`, `repo-architect`, `multi-repo-swarm`
-
-### SPARC Methodology
-`sparc-coord`, `sparc-coder`, `specification`, `pseudocode`, `architecture`, `refinement`
-
-### Specialized Development
-`backend-dev`, `mobile-dev`, `ml-developer`, `cicd-engineer`, `api-docs`, `system-architect`, `code-analyzer`, `base-template-generator`
-
-### Testing & Validation
-`tdd-london-swarm`, `production-validator`
-
-### Migration & Planning
-`migration-planner`, `swarm-init`
-
-## 🎯 Claude Code vs MCP Tools
-
-### Claude Code Handles ALL EXECUTION:
-- **Task tool**: Spawn and run agents concurrently for actual work
-- File operations (Read, Write, Edit, MultiEdit, Glob, Grep)
-- Code generation and programming
-- Bash commands and system operations
-- Implementation work
-- Project navigation and analysis
-- TodoWrite and task management
-- Git operations
-- Package management
-- Testing and debugging
-
-### MCP Tools ONLY COORDINATE:
-- Swarm initialization (topology setup)
-- Agent type definitions (coordination patterns)
-- Task orchestration (high-level planning)
-- Memory management
-- Neural features
-- Performance tracking
-- GitHub integration
-
-**KEY**: MCP coordinates the strategy, Claude Code's Task tool executes with real agents.
-
-## 🚀 Quick Setup
-
+### Initial Setup
 ```bash
-# Add MCP servers (Claude Flow required, others optional)
-claude mcp add claude-flow npx claude-flow@alpha mcp start
-claude mcp add ruv-swarm npx ruv-swarm mcp start  # Optional: Enhanced coordination
-claude mcp add flow-nexus npx flow-nexus@latest mcp start  # Optional: Cloud features
+# Complete one-command setup (recommended)
+./scripts/setup-complete.sh
+
+# Manual setup
+docker-compose up -d              # Start PostgreSQL
+npm install                        # Install root dependencies
+cd apps/api && npm install        # Install API dependencies
+cd apps/web && npm install        # Install web dependencies
 ```
 
-## MCP Tool Categories
-
-### Coordination
-`swarm_init`, `agent_spawn`, `task_orchestrate`
-
-### Monitoring
-`swarm_status`, `agent_list`, `agent_metrics`, `task_status`, `task_results`
-
-### Memory & Neural
-`memory_usage`, `neural_status`, `neural_train`, `neural_patterns`
-
-### GitHub Integration
-`github_swarm`, `repo_analyze`, `pr_enhance`, `issue_triage`, `code_review`
-
-### System
-`benchmark_run`, `features_detect`, `swarm_monitor`
-
-### Flow-Nexus MCP Tools (Optional Advanced Features)
-Flow-Nexus extends MCP capabilities with 70+ cloud-based orchestration tools:
-
-**Key MCP Tool Categories:**
-- **Swarm & Agents**: `swarm_init`, `swarm_scale`, `agent_spawn`, `task_orchestrate`
-- **Sandboxes**: `sandbox_create`, `sandbox_execute`, `sandbox_upload` (cloud execution)
-- **Templates**: `template_list`, `template_deploy` (pre-built project templates)
-- **Neural AI**: `neural_train`, `neural_patterns`, `seraphina_chat` (AI assistant)
-- **GitHub**: `github_repo_analyze`, `github_pr_manage` (repository management)
-- **Real-time**: `execution_stream_subscribe`, `realtime_subscribe` (live monitoring)
-- **Storage**: `storage_upload`, `storage_list` (cloud file management)
-
-**Authentication Required:**
-- Register: `mcp__flow-nexus__user_register` or `npx flow-nexus@latest register`
-- Login: `mcp__flow-nexus__user_login` or `npx flow-nexus@latest login`
-- Access 70+ specialized MCP tools for advanced orchestration
-
-## 🚀 Agent Execution Flow with Claude Code
-
-### The Correct Pattern:
-
-1. **Optional**: Use MCP tools to set up coordination topology
-2. **REQUIRED**: Use Claude Code's Task tool to spawn agents that do actual work
-3. **REQUIRED**: Each agent runs hooks for coordination
-4. **REQUIRED**: Batch all operations in single messages
-
-### Example Full-Stack Development:
-
-```javascript
-// Single message with all agent spawning via Claude Code's Task tool
-[Parallel Agent Execution]:
-  Task("Backend Developer", "Build REST API with Express. Use hooks for coordination.", "backend-dev")
-  Task("Frontend Developer", "Create React UI. Coordinate with backend via memory.", "coder")
-  Task("Database Architect", "Design PostgreSQL schema. Store schema in memory.", "code-analyzer")
-  Task("Test Engineer", "Write Jest tests. Check memory for API contracts.", "tester")
-  Task("DevOps Engineer", "Setup Docker and CI/CD. Document in memory.", "cicd-engineer")
-  Task("Security Auditor", "Review authentication. Report findings via hooks.", "reviewer")
-  
-  // All todos batched together
-  TodoWrite { todos: [...8-10 todos...] }
-  
-  // All file operations together
-  Write "backend/server.js"
-  Write "frontend/App.jsx"
-  Write "database/schema.sql"
-```
-
-## 📋 Agent Coordination Protocol
-
-### Every Agent Spawned via Task Tool MUST:
-
-**1️⃣ BEFORE Work:**
+### Database Operations
 ```bash
-npx claude-flow@alpha hooks pre-task --description "[task]"
-npx claude-flow@alpha hooks session-restore --session-id "swarm-[id]"
+# From apps/api directory
+npx prisma generate              # Generate Prisma client
+npx prisma migrate dev           # Run database migrations
+npx prisma studio               # Open database GUI
+npx prisma migrate dev --name <migration_name>  # Create new migration
 ```
 
-**2️⃣ DURING Work:**
+### Running the Application
 ```bash
-npx claude-flow@alpha hooks post-edit --file "[file]" --memory-key "swarm/[agent]/[step]"
-npx claude-flow@alpha hooks notify --message "[what was done]"
+# Development (both web and API with hot reload)
+npm run dev                      # Runs both workspaces concurrently
+npm run dev:web                 # Web only (Vite dev server on port 5173)
+npm run dev:api                 # API only (tsx watch on port 4000)
+
+# Individual workspaces
+cd apps/api && npm run dev      # API server with hot reload
+cd apps/web && npm run dev      # React frontend with Vite
 ```
 
-**3️⃣ AFTER Work:**
+### Testing
 ```bash
-npx claude-flow@alpha hooks post-task --task-id "[task]"
-npx claude-flow@alpha hooks session-end --export-metrics true
+# Run all tests
+npm run test                    # All unit and integration tests
+npm run test:unit              # Unit tests only
+npm run test:integration       # Integration tests only
+npm run test:e2e               # Playwright end-to-end tests
+npm run test:watch             # Watch mode for development
+npm run test:coverage          # Generate coverage report
+
+# Security and compliance
+npm run test:security          # Penetration testing
+npm run test:hipaa            # HIPAA compliance tests
 ```
 
-## 🎯 Concurrent Execution Examples
-
-### ✅ CORRECT WORKFLOW: MCP Coordinates, Claude Code Executes
-
-```javascript
-// Step 1: MCP tools set up coordination (optional, for complex tasks)
-[Single Message - Coordination Setup]:
-  mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 6 }
-  mcp__claude-flow__agent_spawn { type: "researcher" }
-  mcp__claude-flow__agent_spawn { type: "coder" }
-  mcp__claude-flow__agent_spawn { type: "tester" }
-
-// Step 2: Claude Code Task tool spawns ACTUAL agents that do the work
-[Single Message - Parallel Agent Execution]:
-  // Claude Code's Task tool spawns real agents concurrently
-  Task("Research agent", "Analyze API requirements and best practices. Check memory for prior decisions.", "researcher")
-  Task("Coder agent", "Implement REST endpoints with authentication. Coordinate via hooks.", "coder")
-  Task("Database agent", "Design and implement database schema. Store decisions in memory.", "code-analyzer")
-  Task("Tester agent", "Create comprehensive test suite with 90% coverage.", "tester")
-  Task("Reviewer agent", "Review code quality and security. Document findings.", "reviewer")
-  
-  // Batch ALL todos in ONE call
-  TodoWrite { todos: [
-    {id: "1", content: "Research API patterns", status: "in_progress", priority: "high"},
-    {id: "2", content: "Design database schema", status: "in_progress", priority: "high"},
-    {id: "3", content: "Implement authentication", status: "pending", priority: "high"},
-    {id: "4", content: "Build REST endpoints", status: "pending", priority: "high"},
-    {id: "5", content: "Write unit tests", status: "pending", priority: "medium"},
-    {id: "6", content: "Integration tests", status: "pending", priority: "medium"},
-    {id: "7", content: "API documentation", status: "pending", priority: "low"},
-    {id: "8", content: "Performance optimization", status: "pending", priority: "low"}
-  ]}
-  
-  // Parallel file operations
-  Bash "mkdir -p app/{src,tests,docs,config}"
-  Write "app/package.json"
-  Write "app/src/server.js"
-  Write "app/tests/server.test.js"
-  Write "app/docs/API.md"
+### Build and Deployment
+```bash
+npm run build                  # Build all workspaces
+npm run lint                   # Lint all workspaces
+npm run format                 # Format code with Prettier
 ```
 
-### ❌ WRONG (Multiple Messages):
-```javascript
-Message 1: mcp__claude-flow__swarm_init
-Message 2: Task("agent 1")
-Message 3: TodoWrite { todos: [single todo] }
-Message 4: Write "file.js"
-// This breaks parallel coordination!
+### Data Management Scripts
+```bash
+# From apps/api directory
+npm run import:walmart          # Import Walmart $4 prescription program
+npm run scrape:dpc:test        # Test scraper with 10 providers
+npm run scrape:dpc             # Scrape all 2,734 DPC providers (~73 min)
 ```
 
-## Performance Benefits
+## Architecture
 
-- **84.8% SWE-Bench solve rate**
-- **32.3% token reduction**
-- **2.8-4.4x speed improvement**
-- **27+ neural models**
+### Monorepo Structure
+This is a npm workspaces monorepo with two main applications:
 
-## Hooks Integration
+- **apps/api/** - Express.js REST API (TypeScript, Node.js)
+- **apps/web/** - React frontend (TypeScript, Vite)
 
-### Pre-Operation
-- Auto-assign agents by file type
-- Validate commands for safety
-- Prepare resources automatically
-- Optimize topology by complexity
-- Cache searches
+### API Architecture (`apps/api/src/`)
 
-### Post-Operation
-- Auto-format code
-- Train neural patterns
-- Update memory
-- Analyze performance
-- Track token usage
+**Layered Architecture:**
+- `routes/` - Express route definitions (comparison, prescription, provider)
+- `controllers/` - Request/response handling and validation
+- `services/` - Business logic layer
+  - `costComparison.service.ts` - Basic cost calculations
+  - `costComparisonEnhanced.service.ts` - Enhanced calculations with Healthcare.gov API
+  - `healthcareGov.service.ts` - Healthcare.gov Marketplace API integration
+  - `prescriptionPricing.service.ts` - Walmart, Costco, GoodRx pricing
+  - `providerMatching.service.ts` - DPC provider search and matching
+  - `dpcFrontierScraper.service.ts` - Web scraper for DPC provider data
+- `repositories/` - Data access layer (Prisma)
+- `middleware/` - Express middleware (auth, validation, rate limiting, error handling)
+- `validators/` - Zod schemas for request validation
+- `utils/` - Shared utilities (encryption, logging, geo calculations)
 
-### Session Management
-- Generate summaries
-- Persist state
-- Track metrics
-- Restore context
-- Export workflows
+**Key Design Patterns:**
+- Repository pattern for database access
+- Service layer for business logic
+- Middleware-based request processing
+- Zod for runtime type validation
+- Winston for structured logging
 
-## Advanced Features (v2.0.0)
+### Frontend Architecture (`apps/web/src/`)
 
-- 🚀 Automatic Topology Selection
-- ⚡ Parallel Execution (2.8-4.4x speed)
-- 🧠 Neural Training
-- 📊 Bottleneck Analysis
-- 🤖 Smart Auto-Spawning
-- 🛡️ Self-Healing Workflows
-- 💾 Cross-Session Memory
-- 🔗 GitHub Integration
+- `pages/` - Route-level components (ProviderSearch, ProviderDetails)
+- `components/` - Reusable UI components
+  - `ComparisonForm.tsx` - Cost comparison input form
+  - `ProviderCard.tsx` - DPC provider display
+  - `ProviderMap.tsx` - Google Maps integration
+  - `ProviderFilters.tsx` - Search filters
+  - `PrescriptionPricing.tsx` - Medication pricing display
+- `services/` - API client layer
+  - `apiClient.ts` - Base HTTP client
+  - `providerService.ts` - Provider API methods
+  - `pricingService.ts` - Pricing API methods
+- `hooks/` - React custom hooks
+- `utils/` - Frontend utilities
 
-## Integration Tips
+### Database Schema (Prisma)
 
-1. Start with basic swarm init
-2. Scale agents gradually
-3. Use memory for context
-4. Monitor progress regularly
-5. Train patterns from success
-6. Enable hooks automation
-7. Use GitHub tools first
+**Core Models:**
+- `User` - Platform users with role-based access
+- `UserProfile` - Demographics, health data, insurance details
+- `DPCProvider` - 2,734 DPC practices with geographic data
+- `CostComparison` - Saved cost comparison calculations
+- `PrescriptionPrice` - Cached prescription pricing (GoodRx, Walmart, Costco)
+- `PharmacySavingsProgram` - Walmart $4, Costco membership programs
+- `LabTestPrice` - Lab test pricing from LabCorp, Quest, DPC affiliates
+- `UserMedication` - User medication lists with cost tracking
+- `SavedComparison` - Shareable comparison results
 
-## Support
+**Important Relationships:**
+- Users have one UserProfile (1:1)
+- Users have many CostComparisons (1:N)
+- CostComparisons link to MatchedProviders (1:N)
+- DPCProviders have quality scores and data sources
+- Geographic search uses PostGIS functions for radius queries
 
-- Documentation: https://github.com/ruvnet/claude-flow
-- Issues: https://github.com/ruvnet/claude-flow/issues
-- Flow-Nexus Platform: https://flow-nexus.ruv.io (registration required for cloud features)
+## Environment Variables
 
----
+**Required for API:**
+- `DATABASE_URL` - PostgreSQL connection string
+- `PORT` - API server port (default: 4000)
+- `HEALTHCARE_GOV_API_KEY` - Marketplace API key (get from developer.cms.gov)
 
-Remember: **Claude Flow coordinates, Claude Code creates!**
+**Required for Web:**
+- `VITE_GOOGLE_MAPS_API_KEY` - Google Maps JavaScript API key
+- `VITE_API_URL` - API base URL (default: http://localhost:4000)
 
-# important-instruction-reminders
-Do what has been asked; nothing more, nothing less.
-NEVER create files unless they're absolutely necessary for achieving your goal.
-ALWAYS prefer editing an existing file to creating a new one.
-NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
-Never save working files, text/mds and tests to the root folder.
+**Security (Production):**
+- `JWT_SECRET` - 32+ character secret for JWT signing
+- `ENCRYPTION_KEY` - 32+ character key for AES-256 encryption
+- `BCRYPT_SALT_ROUNDS` - Password hashing rounds (default: 12)
+
+**See `.env.example` for complete configuration options**
+
+## Data Sources
+
+### Healthcare.gov Marketplace API
+- **Purpose:** Real-time insurance plan pricing with subsidies
+- **Coverage:** All 50 states, 5 metal tiers (Bronze, Silver, Gold, Platinum, Catastrophic)
+- **Rate Limit:** Configured in `healthcareGov.service.ts`
+- **Documentation:** apps/api/src/services/healthcareGov.service.ts
+
+### DPC Frontier Scraper
+- **Purpose:** Automated collection of 2,734 DPC provider listings
+- **Data Quality:** Average score 75-85/100 with source tracking
+- **Updates:** Run periodically via `npm run scrape:dpc`
+- **Implementation:** apps/api/src/services/dpcFrontierScraper.service.ts
+
+### Walmart $4 Prescription Program
+- **Coverage:** 30+ common generic medications
+- **Pricing:** $4 (30-day), $10 (90-day)
+- **Categories:** Cardiovascular, diabetes, mental health, pain, antibiotics
+- **Import:** Run `npm run import:walmart` to load data
+
+## API Endpoints
+
+**11 REST endpoints across 3 categories:**
+
+### Providers (`/api/providers`)
+- `GET /search` - Geographic search with radius filtering
+- `GET /:id` - Provider details by ID
+- `GET /statistics` - Provider statistics and coverage
+
+### Prescriptions (`/api/prescriptions`)
+- `GET /pricing` - Get medication pricing from multiple sources
+- `POST /calculate-costs` - Calculate total prescription costs
+- `GET /search` - Search medications by name
+- `GET /programs` - List pharmacy savings programs
+- `GET /walmart-programs` - Walmart $4 program medications
+
+### Comparison (`/api/comparison`)
+- `POST /calculate` - Compare DPC vs Traditional insurance costs
+
+**See `docs/API_REFERENCE.md` for complete endpoint documentation**
+
+## Testing Strategy
+
+- **Unit Tests:** Service layer logic, utilities, calculations
+- **Integration Tests:** API endpoints, database operations, Healthcare.gov API
+- **E2E Tests:** User workflows with Playwright
+- **Security Tests:** HIPAA compliance, penetration testing
+- **Test Framework:** Vitest for unit/integration, Playwright for E2E
+
+## Important Development Notes
+
+### Geographic Search
+- Uses PostGIS for efficient radius-based queries
+- Distance calculations in `apps/api/src/utils/geoDistance.ts`
+- Provider coordinates stored as latitude/longitude decimals
+- Default search radius: 50 miles (configurable)
+
+### Healthcare.gov API Integration
+- Requires API key from https://developer.cms.gov
+- Implements caching to reduce API calls (24-hour TTL)
+- Handles APTC subsidy calculations based on income
+- County-level plan accuracy
+
+### Data Quality
+- DPC providers have quality scores (0-100)
+- Source tracking for all provider data
+- Data validation on import
+- Automatic deduplication by practice name + address
+
+### Security & HIPAA Compliance
+- AES-256 encryption for sensitive data
+- JWT authentication with refresh tokens
+- Rate limiting on all endpoints
+- Audit logging for compliance
+- Input validation with Zod schemas
+- CORS configuration for production
+
+## Common Workflows
+
+### Adding a New API Endpoint
+1. Define route in `apps/api/src/routes/`
+2. Create controller in `apps/api/src/controllers/`
+3. Implement service logic in `apps/api/src/services/`
+4. Add repository methods if database access needed
+5. Create Zod validator in `apps/api/src/validators/`
+6. Add tests in `apps/api/src/__tests__/`
+7. Update API documentation in `docs/API_REFERENCE.md`
+
+### Adding a New Database Model
+1. Update `apps/api/prisma/schema.prisma`
+2. Run `npx prisma migrate dev --name descriptive_migration_name`
+3. Run `npx prisma generate` to update client
+4. Create repository in `apps/api/src/repositories/`
+5. Add TypeScript types in `apps/api/src/types/`
+6. Update relevant services
+
+### Creating a Scraper for New Data Source
+1. Follow pattern in `dpcFrontierScraper.service.ts`
+2. Implement data quality scoring
+3. Add source tracking
+4. Create import script in `scripts/`
+5. Add npm script to `apps/api/package.json`
+6. Document in scraper guide
+
+## Performance Considerations
+
+- Database queries use indexes on frequently searched fields (zipCode, state)
+- Geographic queries optimized with spatial indexes
+- Healthcare.gov responses cached for 24 hours
+- Prescription pricing cached in database
+- Rate limiting prevents API abuse
+- Connection pooling configured (20 max connections)
+
+## Deployment
+
+- **Database:** PostgreSQL 14+ required (uses PostGIS features)
+- **Node.js:** >= 20.0.0
+- **npm:** >= 10.0.0
+- **Environment:** See `.env.example` for production configuration
+- **Docker:** `docker-compose.yml` provided for local PostgreSQL

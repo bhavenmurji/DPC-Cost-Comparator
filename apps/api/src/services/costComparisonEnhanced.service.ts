@@ -22,6 +22,11 @@ import {
   validatePlanResponse,
 } from '../utils/healthcareGovTransformer'
 import { HealthcareGovPlan } from '../types/healthcareGov.types'
+import {
+  supportsHealthcareGovAPI,
+  getMarketplaceInfo,
+  getAPIUnavailableMessage,
+} from '../utils/marketplaceStates'
 
 /**
  * Enhanced comparison result with data source information
@@ -31,6 +36,9 @@ export interface EnhancedComparisonResult extends ComparisonResult {
     traditional: 'api' | 'estimate'
     catastrophic: 'api' | 'estimate'
     lastUpdated?: Date
+    marketplaceType?: 'federal' | 'state-based' | 'state-based-federal-platform'
+    marketplaceName?: string
+    apiUnavailableReason?: string
   }
   planDetails?: {
     traditionalPlan?: HealthcareGovPlan
@@ -49,7 +57,11 @@ export async function calculateEnhancedComparison(
     useApiData?: boolean
   } = {}
 ): Promise<EnhancedComparisonResult> {
-  const useApi = options.useApiData !== false && isHealthcareGovConfigured()
+  // Check marketplace availability for this state
+  const marketplaceInfo = getMarketplaceInfo(input.state)
+  const canUseAPI = supportsHealthcareGovAPI(input.state) &&
+                    options.useApiData !== false &&
+                    isHealthcareGovConfigured()
 
   let traditional: CostBreakdown
   let dpc: CostBreakdown & { catastrophicPremium: number }
@@ -57,8 +69,16 @@ export async function calculateEnhancedComparison(
   let catastrophicSource: 'api' | 'estimate' = 'estimate'
   let traditionalPlan: HealthcareGovPlan | undefined
   let catastrophicPlan: HealthcareGovPlan | undefined
+  let apiUnavailableReason: string | undefined
 
-  if (useApi) {
+  if (!marketplaceInfo.supportsHealthcareGovAPI) {
+    // State uses its own marketplace, log informative message
+    console.log(`ℹ️  ${input.state} uses ${marketplaceInfo.name}, not Healthcare.gov`)
+    console.log(`   Using cost estimates for ${input.state}`)
+    apiUnavailableReason = marketplaceInfo.reason
+  }
+
+  if (canUseAPI) {
     try {
       // Fetch real data from Healthcare.gov API
       const { traditional: apiTraditional, catastrophic: apiCatastrophic } =
@@ -80,7 +100,12 @@ export async function calculateEnhancedComparison(
         dpc = calculateDPCCostsEstimate(input)
       }
     } catch (error) {
-      console.error('Failed to fetch Healthcare.gov data, falling back to estimates:', error)
+      console.error('Failed to fetch Healthcare.gov data, falling back to estimates')
+      console.error('Error details:', JSON.stringify(error, null, 2))
+      if (error instanceof Error) {
+        console.error('Error message:', error.message)
+        console.error('Error stack:', error.stack)
+      }
       traditional = calculateTraditionalCostsEstimate(input)
       dpc = calculateDPCCostsEstimate(input)
     }
@@ -127,6 +152,9 @@ export async function calculateEnhancedComparison(
       traditional: traditionalSource,
       catastrophic: catastrophicSource,
       lastUpdated: new Date(),
+      marketplaceType: marketplaceInfo.type,
+      marketplaceName: marketplaceInfo.name,
+      apiUnavailableReason,
     },
 
     // Plan details (if from API)
@@ -159,6 +187,8 @@ async function fetchRealPlanData(
     income: options.income || 50000,
     limit: 5,
   })
+
+  console.log('Healthcare.gov API Request (Traditional):', JSON.stringify(traditionalRequest, null, 2))
 
   const traditionalResponse = await client.searchPlans(traditionalRequest)
   const traditionalPlan = traditionalResponse.plans.find(validatePlanResponse)

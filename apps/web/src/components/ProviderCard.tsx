@@ -1,22 +1,73 @@
-import { Provider, ProviderSearchResult } from '../services/providerService'
+import { useNavigate } from 'react-router-dom'
+import { ProviderSearchResult } from '../services/providerService'
+import { analytics } from '../utils/analytics'
 
 interface ProviderCardProps {
   result: ProviderSearchResult
-  onSelect?: (provider: Provider) => void
+  onSelect?: (result: ProviderSearchResult) => void
 }
 
-export default function ProviderCard({ result, onSelect }: ProviderCardProps) {
-  const { provider, distanceMiles, matchScore } = result
+export default function ProviderCard({ result }: ProviderCardProps) {
+  const navigate = useNavigate()
+  // API returns flat provider objects with distance property
+  const distance = result.distance || 0
+  const rating = result.rating || 0
+
+  const handleViewDetails = () => {
+    // Track provider view
+    analytics.trackProviderViewed({
+      providerId: result.id,
+      providerName: result.name,
+      city: result.city,
+      state: result.state,
+      monthlyFee: result.monthlyFee,
+      distanceMiles: distance,
+    })
+
+    navigate(`/providers/${result.id}`)
+  }
+
+  const handlePhoneClick = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    analytics.trackProviderContact({
+      providerId: result.id,
+      providerName: result.name,
+      contactMethod: 'phone',
+    })
+  }
+
+  const handleWebsiteClick = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    analytics.trackProviderContact({
+      providerId: result.id,
+      providerName: result.name,
+      contactMethod: 'website',
+    })
+  }
+
+  const handleClaimPractice = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    analytics.trackClaimPractice({
+      providerId: result.id,
+      providerName: result.name,
+    })
+    navigate(`/provider/claim/${result.id}`)
+  }
+
+  // Check if this provider has been claimed
+  const isClaimed = result.claimedByUserId != null
 
   return (
-    <div style={styles.card}>
+    <div style={styles.card} onClick={handleViewDetails}>
       <div style={styles.header}>
         <div style={styles.headerLeft}>
-          <h3 style={styles.name}>{provider.name}</h3>
-          <p style={styles.practiceName}>{provider.practiceName}</p>
+          <h3 style={styles.name}>{result.name}</h3>
+          {rating > 0 && (
+            <p style={styles.practiceName}>Rating: {rating.toFixed(1)}/5</p>
+          )}
         </div>
         <div style={styles.matchBadge}>
-          {matchScore}% Match
+          {distance.toFixed(1)} mi
         </div>
       </div>
 
@@ -25,44 +76,50 @@ export default function ProviderCard({ result, onSelect }: ProviderCardProps) {
           <span style={styles.icon}>📍</span>
           <div style={styles.info}>
             <div style={styles.address}>
-              {provider.address}
-              <br />
-              {provider.city}, {provider.state} {provider.zipCode}
+              {result.address}
+              {result.city && result.state && (
+                <>
+                  <br />
+                  {result.city}, {result.state} {result.zipCode}
+                </>
+              )}
             </div>
-            <div style={styles.distance}>{distanceMiles.toFixed(1)} miles away</div>
+            <div style={styles.distance}>{distance.toFixed(1)} miles away</div>
           </div>
         </div>
 
         <div style={styles.row}>
           <span style={styles.icon}>💵</span>
           <div style={styles.info}>
-            <div style={styles.fee}>${provider.monthlyFee}/month</div>
-            {provider.familyFee && (
-              <div style={styles.familyFee}>Family: ${provider.familyFee}/month</div>
-            )}
+            <div style={styles.fee}>${result.monthlyFee}/month</div>
           </div>
         </div>
 
-        {provider.phone && (
+        {result.phone && (
           <div style={styles.row}>
             <span style={styles.icon}>📞</span>
             <div style={styles.info}>
-              <a href={`tel:${provider.phone}`} style={styles.link}>
-                {provider.phone}
+              <a
+                href={`tel:${result.phone}`}
+                style={styles.link}
+                onClick={handlePhoneClick}
+              >
+                {result.phone}
               </a>
             </div>
           </div>
         )}
 
-        {provider.website && (
+        {result.website && (
           <div style={styles.row}>
             <span style={styles.icon}>🌐</span>
             <div style={styles.info}>
               <a
-                href={provider.website}
+                href={result.website}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={styles.link}
+                onClick={handleWebsiteClick}
               >
                 Visit Website
               </a>
@@ -71,35 +128,30 @@ export default function ProviderCard({ result, onSelect }: ProviderCardProps) {
         )}
       </div>
 
-      {provider.servicesIncluded.length > 0 && (
-        <div style={styles.services}>
-          <div style={styles.servicesTitle}>Services Included:</div>
-          <div style={styles.servicesList}>
-            {provider.servicesIncluded.slice(0, 3).map((service, index) => (
-              <span key={index} style={styles.serviceTag}>
-                {service}
-              </span>
-            ))}
-            {provider.servicesIncluded.length > 3 && (
-              <span style={styles.serviceTag}>+{provider.servicesIncluded.length - 3} more</span>
-            )}
-          </div>
-        </div>
-      )}
-
       <div style={styles.footer}>
         <div style={styles.status}>
-          {provider.acceptingPatients ? (
-            <span style={styles.accepting}>✓ Accepting New Patients</span>
-          ) : (
-            <span style={styles.notAccepting}>Not Accepting Patients</span>
-          )}
+          <span style={styles.dataSource}>
+            Source: {result.dataSource?.source || 'Unknown'}
+          </span>
         </div>
-        {onSelect && (
-          <button onClick={() => onSelect(provider)} style={styles.selectButton}>
-            Select Provider
+        <div style={styles.buttonGroup}>
+          {!isClaimed && (
+            <button
+              type="button"
+              onClick={handleClaimPractice}
+              style={styles.claimButton}
+            >
+              🏥 Claim Practice
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleViewDetails}
+            style={styles.selectButton}
+          >
+            View Details
           </button>
-        )}
+        </div>
       </div>
     </div>
   )
@@ -114,6 +166,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '1rem',
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
     transition: 'box-shadow 0.2s',
+    cursor: 'pointer',
   },
   header: {
     display: 'flex',
@@ -223,6 +276,21 @@ const styles: Record<string, React.CSSProperties> = {
   status: {
     flex: 1,
   },
+  buttonGroup: {
+    display: 'flex',
+    gap: '0.5rem',
+  },
+  claimButton: {
+    backgroundColor: '#10b981',
+    color: '#fff',
+    padding: '0.5rem 1rem',
+    borderRadius: '4px',
+    border: 'none',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
   accepting: {
     color: '#059669',
     fontSize: '0.875rem',
@@ -232,6 +300,11 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#dc2626',
     fontSize: '0.875rem',
     fontWeight: '500',
+  },
+  dataSource: {
+    color: '#6b7280',
+    fontSize: '0.75rem',
+    fontWeight: '400',
   },
   selectButton: {
     backgroundColor: '#2563eb',

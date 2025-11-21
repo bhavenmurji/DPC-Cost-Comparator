@@ -5,9 +5,9 @@ import { apiClient } from './apiClient'
 
 export interface Provider {
   id: string
-  npi: string
+  npi?: string
   name: string
-  practiceName: string
+  practiceName?: string
   address: string
   city: string
   state: string
@@ -17,15 +17,15 @@ export interface Provider {
   website?: string
   monthlyFee: number
   familyFee?: number
-  acceptingPatients: boolean
-  servicesIncluded: string[]
-  specialties: string[]
-  boardCertifications: string[]
-  languages: string[]
+  acceptingPatients?: boolean
+  servicesIncluded?: string[]
+  specialties?: string[]
+  boardCertifications?: string[]
+  languages?: string[]
   latitude?: number
   longitude?: number
   rating?: number
-  reviewCount: number
+  reviewCount?: number
 }
 
 export interface ProviderSearchParams {
@@ -36,22 +36,45 @@ export interface ProviderSearchParams {
   acceptingPatients?: boolean
 }
 
+// API returns flat provider objects with distance, not nested structure
 export interface ProviderSearchResult {
-  provider: Provider
-  distanceMiles: number
-  matchScore: number
-  matchReasons: string[]
+  id: string
+  name: string
+  address: string
+  city: string
+  state: string
+  zipCode: string
+  phone: string
+  website: string | null
+  monthlyFee: number
+  rating: number
+  distance: number
+  acceptingPatients?: boolean
+  specialties?: string[]
+  location: {
+    latitude: number
+    longitude: number
+  }
+  dataSource?: {
+    source: string
+    lastScraped: string
+    dataQualityScore: number
+  }
 }
 
 export interface ProviderSearchResponse {
   success: boolean
   providers: ProviderSearchResult[]
-  total: number
+  count: number
   searchParams: {
     zipCode: string
-    radiusMiles: number
-    centerLat: number
-    centerLng: number
+    radius: number
+    limit: number
+    offset: number
+  }
+  coordinates: {
+    lat: number
+    lng: number
   }
 }
 

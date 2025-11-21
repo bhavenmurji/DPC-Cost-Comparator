@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test - DPC Cost Comparator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 4px;
+            border-left: 4px solid #2563eb;
+        }
+        .success {
+            color: #059669;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 API Connection Test</h1>
+        <p>Test your DPC Cost Comparator API to make sure everything is working.</p>
+
+        <button onclick="testHealthCheck()">1. Test Health Check</button>
+        <button onclick="testComparison()">2. Test Cost Comparison</button>
+        <button onclick="testProviders()">3. Test Provider Search</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:4000';
+        const resultDiv = document.getElementById('result');
+
+        async function testHealthCheck() {
+            resultDiv.innerHTML = '<p>Testing health check...</p>';
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Health Check Successful!</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error: ${error.message}</p>
+                    <p>Make sure the API server is running on http://localhost:4000</p>
+                `;
+            }
+        }
+
+        async function testComparison() {
+            resultDiv.innerHTML = '<p>Testing cost comparison...</p>';
+            try {
+                const response = await fetch(`${API_URL}/api/comparison/calculate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        age: 35,
+                        zipCode: '90210',
+                        state: 'CA',
+                        annualDoctorVisits: 4,
+                        prescriptionCount: 0
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const comparison = data.comparison;
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Cost Comparison Successful!</p>
+                    <h3>Results:</h3>
+                    <p><strong>Traditional Insurance:</strong> $${comparison.traditionalTotalAnnual.toLocaleString()}/year</p>
+                    <p><strong>DPC + Catastrophic:</strong> $${comparison.dpcTotalAnnual.toLocaleString()}/year</p>
+                    <p><strong>Annual Savings:</strong> $${comparison.annualSavings.toLocaleString()} (${comparison.percentageSavings.toFixed(1)}%)</p>
+                    <p><strong>Recommended Plan:</strong> ${comparison.recommendedPlan === 'DPC_CATASTROPHIC' ? 'DPC + Catastrophic' : 'Traditional Insurance'}</p>
+                    <p><strong>Providers Found:</strong> ${data.providers.length}</p>
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error: ${error.message}</p>
+                    <p>Check browser console for details.</p>
+                `;
+                console.error('Full error:', error);
+            }
+        }
+
+        async function testProviders() {
+            resultDiv.innerHTML = '<p>Testing provider search...</p>';
+            try {
+                const response = await fetch(`${API_URL}/api/providers/search?zipCode=90210&radius=25`);
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Provider Search Successful!</p>
+                    <p><strong>Providers Found:</strong> ${data.count}</p>
+                    <p><strong>Search Location:</strong> ZIP ${data.searchParams.zipCode}, Radius ${data.searchParams.radius} miles</p>
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error: ${error.message}</p>
+                `;
+            }
+        }
+
+        // Auto-run health check on load
+        window.onload = () => {
+            testHealthCheck();
+        };
+    </script>
+</body>
+</html>

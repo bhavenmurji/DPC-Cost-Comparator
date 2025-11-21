@@ -110,6 +110,15 @@ export const ComparisonInputSchema = z.object({
   currentDeductible: moneySchema
     .max(50000, 'Deductible seems unreasonably high')
     .optional(),
+
+  // Advanced pricing fields (optional)
+  prescriptionCosts: moneySchema
+    .max(10000, 'Prescription costs seem unreasonably high')
+    .optional(),
+
+  labTestCosts: moneySchema
+    .max(10000, 'Lab test costs seem unreasonably high')
+    .optional(),
 }).strict(); // Reject any additional properties
 
 /**

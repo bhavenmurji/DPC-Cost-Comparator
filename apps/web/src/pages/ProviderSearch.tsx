@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react'
 import { providerService, ProviderSearchResult } from '../services/providerService'
 import ProviderCard from '../components/ProviderCard'
 import ProviderMap from '../components/ProviderMap'
+import ProviderFilters, { FilterOptions } from '../components/ProviderFilters'
+import { analytics } from '../utils/analytics'
 
 export default function ProviderSearch() {
   const [zipCode, setZipCode] = useState('')
   const [radius, setRadius] = useState(25)
   const [results, setResults] = useState<ProviderSearchResult[]>([])
+  const [filteredResults, setFilteredResults] = useState<ProviderSearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searched, setSearched] = useState(false)
@@ -50,6 +53,14 @@ export default function ProviderSearch() {
       })
 
       setResults(response.providers)
+      setFilteredResults(response.providers)
+
+      // Track successful provider search
+      analytics.trackProviderSearch({
+        zipCode,
+        radius,
+        resultsCount: response.providers.length,
+      })
 
       // Set map center from API response
       if (response.coordinates && response.coordinates.lat && response.coordinates.lng) {
@@ -70,8 +81,68 @@ export default function ProviderSearch() {
     setZipCode('')
     setRadius(25)
     setResults([])
+    setFilteredResults([])
     setSearched(false)
     setError(null)
+  }
+
+  const handleFilterChange = (newFilters: FilterOptions) => {
+    applyFilters(results, newFilters)
+
+    // Track filter usage
+    analytics.trackFiltersApplied({
+      maxMonthlyFee: newFilters.maxMonthlyFee,
+      minRating: newFilters.minRating,
+      acceptingPatients: newFilters.acceptingPatients,
+      specialties: newFilters.specialties,
+      sortBy: newFilters.sortBy,
+    })
+  }
+
+  const applyFilters = (providers: ProviderSearchResult[], filterOptions: FilterOptions) => {
+    let filtered = [...providers]
+
+    // Apply price filter
+    if (filterOptions.maxMonthlyFee < 500) {
+      filtered = filtered.filter(p => p.monthlyFee <= filterOptions.maxMonthlyFee)
+    }
+
+    // Apply accepting patients filter
+    if (filterOptions.acceptingPatients !== null) {
+      filtered = filtered.filter(p => p.acceptingPatients === filterOptions.acceptingPatients)
+    }
+
+    // Apply rating filter
+    if (filterOptions.minRating > 0) {
+      filtered = filtered.filter(p => (p.rating || 0) >= filterOptions.minRating)
+    }
+
+    // Apply specialty filter
+    if (filterOptions.specialties.length > 0) {
+      filtered = filtered.filter(p =>
+        filterOptions.specialties.some(spec =>
+          p.specialties?.some((s: string) => s.toLowerCase().includes(spec.toLowerCase()))
+        )
+      )
+    }
+
+    // Apply sorting
+    switch (filterOptions.sortBy) {
+      case 'distance':
+        filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0))
+        break
+      case 'price':
+        filtered.sort((a, b) => a.monthlyFee - b.monthlyFee)
+        break
+      case 'rating':
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        break
+      case 'name':
+        filtered.sort((a, b) => a.name.localeCompare(b.name))
+        break
+    }
+
+    setFilteredResults(filtered)
   }
 
   return (
@@ -142,17 +213,11 @@ export default function ProviderSearch() {
             )}
           </form>
 
-          {searched && !loading && (
-            <div style={styles.resultsInfo}>
-              <div style={styles.resultsCount}>
-                {results.length} provider{results.length !== 1 ? 's' : ''} found
-              </div>
-              {results.length > 0 && (
-                <div style={styles.resultsHint}>
-                  Sorted by distance from {zipCode}
-                </div>
-              )}
-            </div>
+          {searched && !loading && results.length > 0 && (
+            <ProviderFilters
+              onFilterChange={handleFilterChange}
+              totalResults={filteredResults.length}
+            />
           )}
         </div>
 
@@ -170,6 +235,16 @@ export default function ProviderSearch() {
             </div>
           )}
 
+          {!loading && searched && filteredResults.length === 0 && results.length > 0 && (
+            <div style={styles.emptyState}>
+              <div style={styles.emptyIcon}>🔍</div>
+              <h2 style={styles.emptyTitle}>No providers match your filters</h2>
+              <p style={styles.emptyText}>
+                Try adjusting your filters to see more results.
+              </p>
+            </div>
+          )}
+
           {!loading && searched && results.length === 0 && (
             <div style={styles.emptyState}>
               <div style={styles.emptyIcon}>🔍</div>
@@ -183,7 +258,7 @@ export default function ProviderSearch() {
             </div>
           )}
 
-          {!loading && results.length > 0 && (
+          {!loading && filteredResults.length > 0 && (
             <>
               {/* View toggle */}
               <div style={styles.viewToggle}>
@@ -211,7 +286,7 @@ export default function ProviderSearch() {
               {showMap && mapCenter && (
                 <div style={styles.mapContainer}>
                   <ProviderMap
-                    results={results}
+                    results={filteredResults}
                     center={mapCenter}
                     onProviderSelect={(provider) => {
                       console.log('Selected provider:', provider)
@@ -224,8 +299,8 @@ export default function ProviderSearch() {
               {/* List view */}
               {!showMap && (
                 <div style={styles.results}>
-                  {results.map((result, index) => (
-                    <ProviderCard key={result.provider?.id || `provider-${index}`} result={result} />
+                  {filteredResults.map((result, index) => (
+                    <ProviderCard key={result.id || `provider-${index}`} result={result} />
                   ))}
                 </div>
               )}

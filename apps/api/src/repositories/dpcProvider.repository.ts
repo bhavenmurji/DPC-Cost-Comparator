@@ -63,15 +63,15 @@ export async function searchProvidersNearby(
     throw new Error(`Invalid ZIP code: ${params.zipCode}`)
   }
 
+  console.log('🔍 User coordinates for ZIP', params.zipCode, ':', userCoords)
+
   // Calculate bounding box for efficient database query
   const bbox = calculateBoundingBox(userCoords, maxDistance)
+  console.log('📦 Bounding box:', bbox)
 
   // Build query filters
   const whereClause: any = {
     AND: [
-      // Only active providers
-      { createdAt: { not: null } }, // Basic existence check
-
       // Accepting patients filter
       ...(params.acceptingPatientsOnly !== false
         ? [{ acceptingPatients: true }]
@@ -120,6 +120,9 @@ export async function searchProvidersNearby(
     })
   }
 
+  // Log the complete where clause
+  console.log('🔎 Database query whereClause:', JSON.stringify(whereClause, null, 2))
+
   // Fetch providers from database
   const providers = await prisma.dPCProvider.findMany({
     where: whereClause,
@@ -148,6 +151,8 @@ export async function searchProvidersNearby(
       reviewCount: true,
     },
   })
+
+  console.log(`📋 Database returned ${providers.length} providers before distance filtering`)
 
   // Calculate distances and filter
   const providersWithDistance = providers

@@ -60,9 +60,15 @@ export async function findMatchingProviders(
   limit: number = 10
 ): Promise<MatchedProviderResult[]> {
   // Check if we should use mock data (for development/testing)
+  console.log('🔍 Provider Search - USE_MOCK_DATA:', process.env.USE_MOCK_DATA)
+  console.log('🔍 Provider Search - Criteria:', JSON.stringify(criteria, null, 2))
+
   if (process.env.USE_MOCK_DATA === 'true') {
+    console.log('⚠️  Using MOCK provider data')
     return findMatchingProvidersMock(criteria, limit)
   }
+
+  console.log('✅ Searching REAL providers from database')
 
   try {
     // Search database for providers
@@ -76,7 +82,9 @@ export async function findMatchingProviders(
       acceptingPatientsOnly: true,
     }
 
+    console.log('📍 Database search params:', JSON.stringify(searchParams, null, 2))
     const providers = await searchProvidersNearby(searchParams)
+    console.log(`✅ Found ${providers.length} providers from database`)
 
     // Calculate match scores for each provider
     const scoredProviders = providers.map((provider) => {
@@ -98,9 +106,12 @@ export async function findMatchingProviders(
 
     return sorted
   } catch (error) {
-    console.error('Error searching providers from database:', error)
-    // Fallback to mock data if database query fails
-    return findMatchingProvidersMock(criteria, limit)
+    console.error('Error searching providers from database:')
+    console.error('Error name:', (error as any).name)
+    console.error('Error message:', (error as any).message)
+    console.error('Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
+    // Temporarily throw to see full error
+    throw error
   }
 }
 

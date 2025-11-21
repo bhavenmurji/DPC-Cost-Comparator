@@ -1,41 +1,127 @@
-import { useCallback, useState } from 'react'
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api'
-import { Provider, ProviderSearchResult } from '../services/providerService'
+import { useEffect, useRef, useState } from 'react'
+import { useJsApiLoader } from '@react-google-maps/api'
+import { ProviderSearchResult } from '../services/providerService'
 
 interface ProviderMapProps {
   results: ProviderSearchResult[]
   center: { lat: number; lng: number }
-  onProviderSelect?: (provider: Provider) => void
-}
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '600px',
-  borderRadius: '8px',
-}
-
-const defaultMapOptions = {
-  zoomControl: true,
-  mapTypeControl: false,
-  streetViewControl: false,
-  fullscreenControl: true,
+  onProviderSelect?: (provider: ProviderSearchResult) => void
 }
 
 export default function ProviderMap({ results, center, onProviderSelect }: ProviderMapProps) {
-  const [selectedProvider, setSelectedProvider] = useState<ProviderSearchResult | null>(null)
+  const mapRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<google.maps.Map | null>(null)
+  const [markers, setMarkers] = useState<google.maps.Marker[]>([])
+  const [infoWindow, setInfoWindow] = useState<google.maps.InfoWindow | null>(null)
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || '',
   })
 
-  const onLoad = useCallback((map: google.maps.Map) => {
-    setMap(map)
-  }, [])
+  // Initialize map
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current || map) return
 
-  const onUnmount = useCallback(() => {
-    setMap(null)
-  }, [])
+    const newMap = new google.maps.Map(mapRef.current, {
+      center,
+      zoom: 11,
+      zoomControl: true,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+    })
+
+    setMap(newMap)
+    setInfoWindow(new google.maps.InfoWindow())
+  }, [isLoaded, map, center])
+
+  // Add markers
+  useEffect(() => {
+    if (!map || !isLoaded) return
+
+    // Clear existing markers
+    markers.forEach(marker => marker.setMap(null))
+
+    const newMarkers: google.maps.Marker[] = []
+
+    // Add center marker (search location)
+    const centerMarker = new google.maps.Marker({
+      position: center,
+      map,
+      title: 'Your Location',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: '#2563eb',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2,
+      },
+    })
+    newMarkers.push(centerMarker)
+
+    // Add provider markers
+    results.forEach((result) => {
+      if (!result.location?.latitude || !result.location?.longitude) return
+
+      const marker = new google.maps.Marker({
+        position: {
+          lat: result.location.latitude,
+          lng: result.location.longitude,
+        },
+        map,
+        title: result.name,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: '#10b981',
+          fillOpacity: 0.9,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+        },
+      })
+
+      // Add click listener for info window
+      marker.addListener('click', () => {
+        if (!infoWindow) return
+
+        const content = `
+          <div style="padding: 8px; max-width: 250px;">
+            <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1a1a1a;">
+              ${result.name}
+            </h3>
+            <p style="font-size: 14px; color: #6b7280; margin: 0 0 12px 0;">
+              ${result.address || 'Address not available'}
+            </p>
+            <div style="margin-bottom: 12px;">
+              <p style="font-size: 14px; margin: 4px 0; color: #374151;">
+                📍 ${result.distance?.toFixed(1) || '0.0'} miles away
+              </p>
+              <p style="font-size: 14px; margin: 4px 0; color: #374151; font-weight: 600;">
+                💵 $${result.monthlyFee}/month
+              </p>
+            </div>
+          </div>
+        `
+
+        infoWindow.setContent(content)
+        infoWindow.open(map, marker)
+
+        if (onProviderSelect) {
+          onProviderSelect(result)
+        }
+      })
+
+      newMarkers.push(marker)
+    })
+
+    setMarkers(newMarkers)
+
+    // Cleanup
+    return () => {
+      newMarkers.forEach(marker => marker.setMap(null))
+    }
+  }, [map, results, center, isLoaded, infoWindow, onProviderSelect])
 
   if (loadError) {
     return (
@@ -56,86 +142,14 @@ export default function ProviderMap({ results, center, onProviderSelect }: Provi
   }
 
   return (
-    <GoogleMap
-      mapContainerStyle={mapContainerStyle}
-      center={center}
-      zoom={11}
-      onLoad={onLoad}
-      onUnmount={onUnmount}
-      options={defaultMapOptions}
-    >
-      {/* Center marker (user's search location) */}
-      <Marker
-        position={center}
-        icon={{
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: '#2563eb',
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
-        }}
-        title="Your Location"
-      />
-
-      {/* Provider markers */}
-      {results.map((result, index) => {
-        // Providers have location: { latitude, longitude }
-        const position = {
-          lat: result.location?.latitude || 0,
-          lng: result.location?.longitude || 0,
-        }
-
-        return (
-          <Marker
-            key={result.id || index}
-            position={position}
-            title={result.name}
-            onClick={() => setSelectedProvider(result)}
-            icon={{
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 6,
-              fillColor: '#10b981',
-              fillOpacity: 0.9,
-              strokeColor: '#ffffff',
-              strokeWeight: 2,
-            }}
-          />
-        )
-      })}
-
-      {/* Info window for selected provider */}
-      {selectedProvider && (
-        <InfoWindow
-          position={{
-            lat: selectedProvider.location?.latitude || 0,
-            lng: selectedProvider.location?.longitude || 0,
-          }}
-          onCloseClick={() => setSelectedProvider(null)}
-        >
-          <div style={styles.infoWindow}>
-            <h3 style={styles.infoTitle}>{selectedProvider.name}</h3>
-            <p style={styles.infoPractice}>{selectedProvider.address || 'Address not available'}</p>
-            <div style={styles.infoDetails}>
-              <p style={styles.infoDistance}>
-                📍 {selectedProvider.distance?.toFixed(1) || '0.0'} miles away
-              </p>
-              <p style={styles.infoFee}>
-                💵 ${selectedProvider.monthlyFee}/month
-              </p>
-            </div>
-            {onProviderSelect && (
-              <button
-                onClick={() => onProviderSelect(selectedProvider)}
-                style={styles.infoButton}
-              >
-                View Details
-              </button>
-            )}
-          </div>
-        </InfoWindow>
-      )}
-    </GoogleMap>
+    <div
+      ref={mapRef}
+      style={{
+        width: '100%',
+        height: '600px',
+        borderRadius: '8px',
+      }}
+    />
   )
 }
 

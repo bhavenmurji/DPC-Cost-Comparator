@@ -13,14 +13,21 @@ datasource db {
 model User {
   id               String              @id @default(cuid())
   email            String              @unique
+  passwordHash     String?             // Nullable for OAuth users
   name             String
   role             Role                @default(USER)
+  emailVerified    Boolean             @default(false)
+  verificationToken String?            @unique
+  resetToken       String?             @unique
+  resetTokenExpiry DateTime?
+  lastLogin        DateTime?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
   comparisons      CostComparison[]
   userProfiles     UserProfile?
   medications      UserMedication[]
   savedComparisons SavedComparison[]
+  claimedProvider  DPCProvider?        // One provider per account
 
   @@map("users")
 }
@@ -99,8 +106,14 @@ model CostComparison {
 model DPCProvider {
   id                    String                @id @default(cuid())
 
+  // Claimed account (optional - providers can claim their listing)
+  claimedByUserId       String?               @unique
+  claimedBy             User?                 @relation(fields: [claimedByUserId], references: [id], onDelete: SetNull)
+  claimedAt             DateTime?
+  verified              Boolean               @default(false)
+
   // Provider details
-  npi                   String                @unique
+  npi                   String?               @unique
   name                  String
   practiceName          String
 
@@ -122,6 +135,8 @@ model DPCProvider {
   familyFee             Float?
   acceptingPatients     Boolean               @default(true)
   servicesIncluded      String[]
+  patientCapacity       Int?                  // Total patient capacity
+  currentPatientCount   Int?                  // Current number of patients
 
   // Specialties and certifications
   specialties           String[]
@@ -131,6 +146,12 @@ model DPCProvider {
   // Ratings
   rating                Float?
   reviewCount           Int                   @default(0)
+
+  // Analytics (for claimed providers)
+  viewCount             Int                   @default(0)
+  contactClickCount     Int                   @default(0)
+  websiteClickCount     Int                   @default(0)
+  lastViewedAt          DateTime?
 
   // Integration
   ribbonHealthId        String?
@@ -145,6 +166,7 @@ model DPCProvider {
   @@map("dpc_providers")
   @@index([zipCode])
   @@index([state])
+  @@index([claimedByUserId])
 }
 
 // Matched provider results for a comparison

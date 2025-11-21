@@ -28,6 +28,7 @@ const COUNTY_FIPS_BY_ZIP: Record<string, string> = {
 
   // California examples
   '90001': '06037', // Los Angeles County
+  '90210': '06037', // Los Angeles County (Beverly Hills)
   '94102': '06075', // San Francisco County
   '92101': '06073', // San Diego County
 

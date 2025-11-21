@@ -50,74 +50,116 @@ export class DPCFrontierScraperService {
   private requestDelay = 1500 // 1.5 seconds between requests (respectful scraping)
 
   /**
-   * Fetch all practice IDs from the homepage
+   * Fetch all practice data from the Next.js JSON API
    */
-  async fetchAllPracticeIds(): Promise<string[]> {
+  async fetchAllPracticesFromAPI(): Promise<any[]> {
     try {
-      console.log('Fetching practice IDs from DPC Frontier homepage...')
-      const response = await axios.get(this.baseUrl, {
+      console.log('Fetching practice data from DPC Frontier Next.js API...')
+
+      // First, get the homepage to extract the buildId
+      const homepageResponse = await axios.get(this.baseUrl, {
         headers: {
           'User-Agent':
             'Mozilla/5.0 (compatible; DPC-Cost-Comparator/1.0; +https://github.com/bhavenmurji/DPC-Cost-Comparator)',
         },
       })
 
-      const $ = cheerio.load(response.data)
-
-      // Extract __NEXT_DATA__ script tag
+      const $ = cheerio.load(homepageResponse.data)
       const nextDataScript = $('script#__NEXT_DATA__').html()
       if (!nextDataScript) {
         throw new Error('Could not find __NEXT_DATA__ script tag')
       }
 
       const nextData = JSON.parse(nextDataScript)
-      const practices = nextData.props?.pageProps?.practices || []
+      const buildId = nextData.buildId
 
-      const practiceIds = practices.map((p: any) => p.id || p.practiceId)
-      console.log(`Found ${practiceIds.length} practices`)
+      if (!buildId) {
+        throw new Error('Could not extract buildId from Next.js data')
+      }
 
-      return practiceIds
-    } catch (error) {
-      console.error('Error fetching practice IDs:', error)
-      throw error
-    }
-  }
+      console.log(`Found buildId: ${buildId}`)
 
-  /**
-   * Fetch detailed data for a single practice
-   */
-  async fetchPracticeDetails(practiceId: string): Promise<DPCPracticeData | null> {
-    try {
-      const url = `${this.baseUrl}/practice/${practiceId}`
-      const response = await axios.get(url, {
+      // Now fetch the JSON API directly
+      const apiUrl = `${this.baseUrl}/_next/data/${buildId}/index.json`
+      console.log(`Fetching: ${apiUrl}`)
+
+      const apiResponse = await axios.get(apiUrl, {
         headers: {
           'User-Agent':
             'Mozilla/5.0 (compatible; DPC-Cost-Comparator/1.0; +https://github.com/bhavenmurji/DPC-Cost-Comparator)',
         },
       })
 
-      const $ = cheerio.load(response.data)
+      const practices = apiResponse.data?.pageProps?.practices || []
+      console.log(`Found ${practices.length} practices from API`)
 
-      // Extract __NEXT_DATA__ script tag
-      const nextDataScript = $('script#__NEXT_DATA__').html()
-      if (!nextDataScript) {
-        console.warn(`No data found for practice ${practiceId}`)
-        return null
-      }
-
-      const nextData = JSON.parse(nextDataScript)
-      const practice = nextData.props?.pageProps?.practice
-
-      if (!practice) {
-        console.warn(`No practice data found for ${practiceId}`)
-        return null
-      }
-
-      // Transform raw data to our schema
-      return this.transformPracticeData(practice)
+      return practices
     } catch (error) {
-      console.error(`Error fetching practice ${practiceId}:`, error)
-      return null
+      console.error('Error fetching practice data from API:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Fetch all practice IDs from the homepage (legacy method, kept for compatibility)
+   */
+  async fetchAllPracticeIds(): Promise<string[]> {
+    const practices = await this.fetchAllPracticesFromAPI()
+    return practices.map((p: any) => p.id || p.practiceId)
+  }
+
+  /**
+   * Fetch detailed data for a single practice (DEPRECATED - individual pages don't exist)
+   * Use fetchAllPracticesFromAPI() instead
+   */
+  async fetchPracticeDetails(practiceId: string): Promise<DPCPracticeData | null> {
+    console.warn('fetchPracticeDetails is deprecated - individual practice pages do not exist')
+    console.warn('Use fetchAllPracticesFromAPI() to get all practices at once')
+    return null
+  }
+
+  /**
+   * Transform minimal API data to our schema
+   * Note: API only provides: id, lat, lng, kind, onsite
+   */
+  private transformAPIDataToPractice(apiData: any): DPCPracticeData {
+    const practiceType = this.determinePracticeType(apiData.k || apiData.kind)
+    const practiceId = apiData.i || apiData.p || apiData.id || 'unknown'
+
+    return {
+      id: practiceId,
+      name: `DPC Practice ${practiceId.substring(0, 8)}`, // Name not provided by API
+      verified: false, // Not provided by API
+      address: {
+        street: '', // Not provided by API
+        city: '', // Not provided by API
+        state: '', // Not provided by API
+        zip: '', // Not provided by API
+      },
+      location: {
+        lat: apiData.l || apiData.lat || 0,
+        lng: apiData.g || apiData.lng || 0,
+      },
+      contact: {
+        phone: undefined,
+        website: undefined,
+        email: undefined,
+      },
+      physicians: [],
+      services: {
+        labDiscounts: false,
+        radiologyDiscounts: false,
+        medicationDispensing: false,
+        homeVisits: false,
+      },
+      pricing: {
+        monthlyFee: undefined,
+        annualFee: undefined,
+        enrollmentFee: undefined,
+      },
+      practiceType,
+      acceptingPatients: true, // Assume true since not provided
+      openedDate: undefined,
     }
   }
 
@@ -218,38 +260,55 @@ export class DPCFrontierScraperService {
    */
   async savePracticeToDatabase(practice: DPCPracticeData): Promise<void> {
     try {
+      // Generate a placeholder NPI (API doesn't provide real NPIs)
+      const placeholderNPI = `DPC${practice.id.substring(0, 7).toUpperCase()}`
+
       // Upsert the DPC provider
       await prisma.dPCProvider.upsert({
         where: { id: practice.id },
         create: {
           id: practice.id,
+          npi: placeholderNPI,
           name: practice.name,
-          address: practice.address.street,
-          city: practice.address.city,
-          state: practice.address.state,
-          zipCode: practice.address.zip,
+          practiceName: practice.name,
+          address: practice.address.street || 'Address not available',
+          city: practice.address.city || 'Unknown',
+          state: practice.address.state || 'XX',
+          zipCode: practice.address.zip || '00000',
           phone: practice.contact.phone || '',
+          email: practice.contact.email,
           website: practice.contact.website,
           monthlyFee: practice.pricing.monthlyFee || 0,
-          servicesOffered: this.formatServicesOffered(practice.services),
+          familyFee: practice.pricing.annualFee ? practice.pricing.annualFee / 12 : undefined,
+          acceptingPatients: practice.acceptingPatients,
+          servicesIncluded: this.formatServicesOffered(practice.services),
+          specialties: [],
+          boardCertifications: [],
+          languages: [],
           latitude: practice.location.lat,
           longitude: practice.location.lng,
-          rating: 0, // Will be updated with real ratings later
-          verified: practice.verified,
+          rating: 0,
+          reviewCount: 0,
         },
         update: {
           name: practice.name,
-          address: practice.address.street,
-          city: practice.address.city,
-          state: practice.address.state,
-          zipCode: practice.address.zip,
+          practiceName: practice.name,
+          address: practice.address.street || 'Address not available',
+          city: practice.address.city || 'Unknown',
+          state: practice.address.state || 'XX',
+          zipCode: practice.address.zip || '00000',
           phone: practice.contact.phone || '',
+          email: practice.contact.email,
           website: practice.contact.website,
           monthlyFee: practice.pricing.monthlyFee || 0,
-          servicesOffered: this.formatServicesOffered(practice.services),
+          familyFee: practice.pricing.annualFee ? practice.pricing.annualFee / 12 : undefined,
+          acceptingPatients: practice.acceptingPatients,
+          servicesIncluded: this.formatServicesOffered(practice.services),
+          specialties: [],
+          boardCertifications: [],
+          languages: [],
           latitude: practice.location.lat,
           longitude: practice.location.lng,
-          verified: practice.verified,
         },
       })
 
@@ -327,58 +386,59 @@ export class DPCFrontierScraperService {
   }
 
   /**
-   * Scrape all practices and save to database
+   * Scrape all practices from JSON API and save to database
    */
   async scrapeAllPractices(options?: { limit?: number; startFrom?: number }): Promise<void> {
     const { limit, startFrom = 0 } = options || {}
 
-    console.log('🚀 Starting DPC Frontier scraping process...')
+    console.log('🚀 Starting DPC Frontier import from JSON API...')
 
-    // Step 1: Fetch all practice IDs
-    const practiceIds = await this.fetchAllPracticeIds()
-    console.log(`Found ${practiceIds.length} total practices`)
+    // Step 1: Fetch all practice data from JSON API
+    const allPractices = await this.fetchAllPracticesFromAPI()
+    console.log(`Found ${allPractices.length} total practices from API`)
 
     // Apply limit and offset
-    const targetIds = limit ? practiceIds.slice(startFrom, startFrom + limit) : practiceIds.slice(startFrom)
-    console.log(`Scraping ${targetIds.length} practices (starting from index ${startFrom})`)
+    const targetPractices = limit
+      ? allPractices.slice(startFrom, startFrom + limit)
+      : allPractices.slice(startFrom)
+    console.log(`Importing ${targetPractices.length} practices (starting from index ${startFrom})`)
 
-    // Step 2: Scrape each practice
+    // Step 2: Process each practice
     let successCount = 0
     let errorCount = 0
 
-    for (let i = 0; i < targetIds.length; i++) {
-      const practiceId = targetIds[i]
-      const progress = `[${i + 1}/${targetIds.length}]`
+    for (let i = 0; i < targetPractices.length; i++) {
+      const apiData = targetPractices[i]
+      const progress = `[${i + 1}/${targetPractices.length}]`
 
       try {
-        console.log(`${progress} Fetching practice ${practiceId}...`)
+        const practiceId = apiData.i || apiData.p || apiData.id || 'unknown'
+        console.log(`${progress} Processing practice ${practiceId}...`)
 
-        // Fetch practice details
-        const practiceData = await this.fetchPracticeDetails(practiceId)
+        // Transform API data to our schema
+        const practiceData = this.transformAPIDataToPractice(apiData)
 
-        if (practiceData) {
-          // Save to database
-          await this.savePracticeToDatabase(practiceData)
-          successCount++
-        } else {
-          console.warn(`${progress} No data found for practice ${practiceId}`)
-          errorCount++
-        }
+        // Save to database
+        await this.savePracticeToDatabase(practiceData)
+        successCount++
 
-        // Respectful delay between requests
-        if (i < targetIds.length - 1) {
-          await this.delay(this.requestDelay)
+        // Small delay to avoid overwhelming the database
+        if (i < targetPractices.length - 1 && i % 100 === 0) {
+          await this.delay(100)
         }
       } catch (error) {
+        const practiceId = apiData.i || apiData.p || apiData.id || 'unknown'
         console.error(`${progress} Error processing practice ${practiceId}:`, error)
         errorCount++
       }
     }
 
-    console.log('\n✅ Scraping complete!')
-    console.log(`   Successfully scraped: ${successCount}`)
+    console.log('\n✅ Import complete!')
+    console.log(`   Successfully imported: ${successCount}`)
     console.log(`   Errors: ${errorCount}`)
-    console.log(`   Total: ${targetIds.length}`)
+    console.log(`   Total: ${targetPractices.length}`)
+    console.log(`\n📍 Note: API provides limited data (coordinates, type, onsite status only)`)
+    console.log(`   Additional details (names, addresses, pricing) not available from this source`)
   }
 }
 

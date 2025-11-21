@@ -9,6 +9,14 @@ interface ComparisonResultsProps {
       traditional: CostBreakdown
       dpc: CostBreakdown
     }
+    dataSource?: {
+      traditional: 'api' | 'estimate'
+      catastrophic: 'api' | 'estimate'
+      lastUpdated?: string
+      marketplaceType?: 'federal' | 'state-based' | 'state-based-federal-platform'
+      marketplaceName?: string
+      apiUnavailableReason?: string
+    }
   }
   providers?: Array<{
     provider: {
@@ -39,9 +47,48 @@ interface CostBreakdown {
 export default function ComparisonResults({ results, providers }: ComparisonResultsProps) {
   const savings = results.annualSavings
   const isDPCBetter = results.recommendedPlan === 'DPC_CATASTROPHIC'
+  const dataSource = results.dataSource
+  const isUsingEstimates = dataSource && (dataSource.traditional === 'estimate' || dataSource.catastrophic === 'estimate')
 
   return (
     <div style={styles.container}>
+      {/* Data Source Transparency Banner */}
+      {dataSource && isUsingEstimates && (
+        <div style={styles.dataSourceBanner}>
+          <div style={styles.dataSourceHeader}>
+            <span style={styles.dataSourceIcon}>ℹ️</span>
+            <div style={styles.dataSourceContent}>
+              <h4 style={styles.dataSourceTitle}>Data Source Information</h4>
+              {dataSource.marketplaceType === 'state-based' && (
+                <p style={styles.dataSourceText}>
+                  <strong>{dataSource.marketplaceName}</strong> operates a state-based health insurance marketplace.
+                  Insurance premium estimates shown are based on typical plans.
+                  For official pricing, visit your state marketplace website.
+                </p>
+              )}
+              {dataSource.marketplaceType === 'federal' && (
+                <p style={styles.dataSourceText}>
+                  Using estimated insurance premiums. Connect to Healthcare.gov API for real-time plan pricing.
+                </p>
+              )}
+              <div style={styles.dataSourceDetails}>
+                <span style={styles.dataSourceBadge}>
+                  📊 Traditional: <strong>{dataSource.traditional === 'api' ? 'Real API Data' : 'Estimate'}</strong>
+                </span>
+                <span style={styles.dataSourceBadge}>
+                  🏥 Catastrophic: <strong>{dataSource.catastrophic === 'api' ? 'Real API Data' : 'Estimate'}</strong>
+                </span>
+                {providers && providers.length > 0 && (
+                  <span style={styles.dataSourceBadge}>
+                    ✅ Providers: <strong>Real Database Data</strong>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary Card */}
       <div style={isDPCBetter ? styles.savingsCard : styles.warningCard}>
         <h2 style={styles.savingsTitle}>
@@ -190,6 +237,51 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '2rem',
+  },
+  dataSourceBanner: {
+    backgroundColor: '#eff6ff',
+    border: '2px solid #3b82f6',
+    borderRadius: '8px',
+    padding: '1.5rem',
+    marginBottom: '2rem',
+  },
+  dataSourceHeader: {
+    display: 'flex',
+    gap: '1rem',
+    alignItems: 'start',
+  },
+  dataSourceIcon: {
+    fontSize: '2rem',
+    flexShrink: 0,
+  },
+  dataSourceContent: {
+    flex: 1,
+  },
+  dataSourceTitle: {
+    fontSize: '1.125rem',
+    fontWeight: '600',
+    color: '#1e40af',
+    margin: '0 0 0.5rem 0',
+  },
+  dataSourceText: {
+    fontSize: '0.9rem',
+    color: '#1e3a8a',
+    lineHeight: '1.5',
+    margin: '0 0 1rem 0',
+  },
+  dataSourceDetails: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.75rem',
+  },
+  dataSourceBadge: {
+    backgroundColor: '#fff',
+    border: '1px solid #3b82f6',
+    color: '#1e40af',
+    padding: '0.5rem 0.75rem',
+    borderRadius: '6px',
+    fontSize: '0.875rem',
+    fontWeight: '500',
   },
   savingsCard: {
     backgroundColor: '#10b981',

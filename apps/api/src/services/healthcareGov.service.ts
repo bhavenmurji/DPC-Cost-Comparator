@@ -235,6 +235,15 @@ export class HealthcareGovApiClient {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError<{ code?: number; message?: string }>
 
+      // Log full error details for debugging
+      console.error('Healthcare.gov API Error Details:')
+      console.error('- Status:', axiosError.response?.status)
+      console.error('- Status Text:', axiosError.response?.statusText)
+      console.error('- Request URL:', axiosError.config?.url)
+      console.error('- Request Method:', axiosError.config?.method)
+      console.error('- Response Data:', JSON.stringify(axiosError.response?.data, null, 2))
+      console.error('- Error Message:', axiosError.message)
+
       return {
         status: axiosError.response?.status || 500,
         code: axiosError.response?.data?.code || 9999,
@@ -244,6 +253,8 @@ export class HealthcareGovApiClient {
     }
 
     if (error instanceof Error) {
+      console.error('Generic Error:', error.message)
+      console.error('Stack:', error.stack)
       return {
         status: 500,
         code: 9999,
@@ -251,6 +262,7 @@ export class HealthcareGovApiClient {
       }
     }
 
+    console.error('Unknown error type:', error)
     return {
       status: 500,
       code: 9999,
