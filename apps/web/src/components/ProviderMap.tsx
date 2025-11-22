@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useJsApiLoader } from '@react-google-maps/api'
 import { ProviderSearchResult } from '../services/providerService'
+import { getEnv } from '../config/env'
+import MapSkeleton from './MapSkeleton'
 
 interface ProviderMapProps {
   results: ProviderSearchResult[]
@@ -14,8 +16,29 @@ export default function ProviderMap({ results, center, onProviderSelect }: Provi
   const [markers, setMarkers] = useState<google.maps.Marker[]>([])
   const [infoWindow, setInfoWindow] = useState<google.maps.InfoWindow | null>(null)
 
+  // Get validated environment config
+  const env = getEnv()
+
+  // Check if Google Maps API key is configured
+  if (!env.hasGoogleMapsKey) {
+    return (
+      <div style={styles.missingConfig}>
+        <div style={styles.missingConfigContent}>
+          <div style={styles.missingConfigIcon}>maps</div>
+          <h3 style={styles.missingConfigTitle}>Map View Not Available</h3>
+          <p style={styles.missingConfigText}>
+            Google Maps is not configured. Please set the <code style={styles.code}>VITE_GOOGLE_MAPS_API_KEY</code> environment variable in your <code style={styles.code}>.env</code> file to enable map view.
+          </p>
+          <p style={styles.missingConfigSubtext}>
+            You can still view providers in the list below.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: env.googleMapsApiKey,
   })
 
   // Initialize map
@@ -133,12 +156,7 @@ export default function ProviderMap({ results, center, onProviderSelect }: Provi
   }
 
   if (!isLoaded) {
-    return (
-      <div style={styles.loading}>
-        <div style={styles.spinner}></div>
-        <p>Loading map...</p>
-      </div>
-    )
+    return <MapSkeleton height="600px" />
   }
 
   return (
@@ -146,9 +164,11 @@ export default function ProviderMap({ results, center, onProviderSelect }: Provi
       ref={mapRef}
       style={{
         width: '100%',
-        height: '600px',
+        height: 'clamp(300px, 50vh, 600px)',
         borderRadius: '8px',
+        minHeight: '300px',
       }}
+      className="map-container"
     />
   )
 }
@@ -179,6 +199,49 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
     marginBottom: '1rem',
+  },
+  missingConfig: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '600px',
+    backgroundColor: '#fef3c7',
+    border: '2px solid #f59e0b',
+    borderRadius: '8px',
+    padding: '2rem',
+  },
+  missingConfigContent: {
+    textAlign: 'center',
+    maxWidth: '400px',
+  },
+  missingConfigIcon: {
+    fontSize: '48px',
+    marginBottom: '1rem',
+  },
+  missingConfigTitle: {
+    margin: '0 0 1rem 0',
+    color: '#92400e',
+    fontSize: '1.25rem',
+    fontWeight: '600',
+  },
+  missingConfigText: {
+    margin: '0 0 0.5rem 0',
+    color: '#78350f',
+    fontSize: '0.95rem',
+    lineHeight: '1.5',
+  },
+  missingConfigSubtext: {
+    margin: '0.5rem 0 0 0',
+    color: '#b45309',
+    fontSize: '0.875rem',
+  },
+  code: {
+    backgroundColor: '#fbbf24',
+    padding: '2px 6px',
+    borderRadius: '3px',
+    fontFamily: 'monospace',
+    fontSize: '0.9em',
+    color: '#78350f',
   },
   infoWindow: {
     padding: '0.5rem',

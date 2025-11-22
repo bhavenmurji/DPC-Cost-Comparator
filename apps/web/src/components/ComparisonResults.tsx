@@ -51,35 +51,35 @@ export default function ComparisonResults({ results, providers }: ComparisonResu
   const isUsingEstimates = dataSource && (dataSource.traditional === 'estimate' || dataSource.catastrophic === 'estimate')
 
   return (
-    <div style={styles.container}>
+    <div className="max-w-screen-xl mx-auto p-8">
       {/* Data Source Transparency Banner */}
       {dataSource && isUsingEstimates && (
-        <div style={styles.dataSourceBanner}>
-          <div style={styles.dataSourceHeader}>
-            <span style={styles.dataSourceIcon}>ℹ️</span>
-            <div style={styles.dataSourceContent}>
-              <h4 style={styles.dataSourceTitle}>Data Source Information</h4>
+        <div className="bg-blue-50 border-2 border-blue-500 rounded-lg p-6 mb-8">
+          <div className="flex gap-4 items-start">
+            <span className="text-3xl flex-shrink-0">ℹ️</span>
+            <div className="flex-1">
+              <h4 className="text-lg font-semibold text-blue-800 mb-2">Data Source Information</h4>
               {dataSource.marketplaceType === 'state-based' && (
-                <p style={styles.dataSourceText}>
+                <p className="text-sm text-blue-900 leading-relaxed mb-4">
                   <strong>{dataSource.marketplaceName}</strong> operates a state-based health insurance marketplace.
                   Insurance premium estimates shown are based on typical plans.
                   For official pricing, visit your state marketplace website.
                 </p>
               )}
               {dataSource.marketplaceType === 'federal' && (
-                <p style={styles.dataSourceText}>
+                <p className="text-sm text-blue-900 leading-relaxed mb-4">
                   Using estimated insurance premiums. Connect to Healthcare.gov API for real-time plan pricing.
                 </p>
               )}
-              <div style={styles.dataSourceDetails}>
-                <span style={styles.dataSourceBadge}>
+              <div className="flex flex-wrap gap-3">
+                <span className="bg-white border border-blue-500 text-blue-800 px-3 py-2 rounded-md text-sm font-medium">
                   📊 Traditional: <strong>{dataSource.traditional === 'api' ? 'Real API Data' : 'Estimate'}</strong>
                 </span>
-                <span style={styles.dataSourceBadge}>
+                <span className="bg-white border border-blue-500 text-blue-800 px-3 py-2 rounded-md text-sm font-medium">
                   🏥 Catastrophic: <strong>{dataSource.catastrophic === 'api' ? 'Real API Data' : 'Estimate'}</strong>
                 </span>
                 {providers && providers.length > 0 && (
-                  <span style={styles.dataSourceBadge}>
+                  <span className="bg-white border border-blue-500 text-blue-800 px-3 py-2 rounded-md text-sm font-medium">
                     ✅ Providers: <strong>Real Database Data</strong>
                   </span>
                 )}
@@ -90,14 +90,14 @@ export default function ComparisonResults({ results, providers }: ComparisonResu
       )}
 
       {/* Summary Card */}
-      <div style={isDPCBetter ? styles.savingsCard : styles.warningCard}>
-        <h2 style={styles.savingsTitle}>
+      <div className={`${isDPCBetter ? 'bg-emerald-500' : 'bg-amber-500'} text-white p-8 rounded-lg text-center mb-8`}>
+        <h2 className="text-2xl font-bold mb-2">
           {isDPCBetter ? '💰 You Could Save!' : '⚠️ Higher Cost'}
         </h2>
-        <div style={styles.savingsAmount}>
+        <div className="text-5xl font-bold mb-2">
           ${Math.abs(savings).toLocaleString()}/year
         </div>
-        <p style={styles.savingsDescription}>
+        <p className="text-lg opacity-90">
           {isDPCBetter
             ? `By switching to DPC + Catastrophic coverage, you could save ${results.percentageSavings.toFixed(1)}% annually`
             : `Traditional insurance appears to be ${Math.abs(results.percentageSavings).toFixed(1)}% cheaper for your situation`}
@@ -105,56 +105,56 @@ export default function ComparisonResults({ results, providers }: ComparisonResu
       </div>
 
       {/* Cost Comparison */}
-      <div style={styles.comparisonGrid}>
-        <div style={styles.planCard}>
-          <h3 style={styles.planTitle}>Traditional Insurance</h3>
-          <div style={styles.totalCost}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="bg-white border-2 border-gray-200 rounded-lg p-6">
+          <h3 className="text-xl font-semibold mb-4">Traditional Insurance</h3>
+          <div className="text-4xl font-bold text-gray-900 mb-6">
             ${results.traditionalTotalAnnual.toLocaleString()}
-            <span style={styles.perYear}>/year</span>
+            <span className="text-base text-gray-500 font-normal">/year</span>
           </div>
-          <div style={styles.breakdown}>
-            <div style={styles.breakdownItem}>
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex justify-between py-2 text-sm">
               <span>Monthly Premium</span>
               <span>${(results.breakdown.traditional.premiums / 12).toFixed(0)}</span>
             </div>
-            <div style={styles.breakdownItem}>
+            <div className="flex justify-between py-2 text-sm">
               <span>Annual Deductible</span>
               <span>${results.breakdown.traditional.deductible.toLocaleString()}</span>
             </div>
-            <div style={styles.breakdownItem}>
+            <div className="flex justify-between py-2 text-sm">
               <span>Copays</span>
               <span>${results.breakdown.traditional.copays.toLocaleString()}</span>
             </div>
-            <div style={styles.breakdownItem}>
+            <div className="flex justify-between py-2 text-sm">
               <span>Prescriptions</span>
               <span>${results.breakdown.traditional.prescriptions.toLocaleString()}</span>
             </div>
           </div>
         </div>
 
-        <div style={isDPCBetter ? styles.planCardRecommended : styles.planCard}>
-          <h3 style={styles.planTitle}>
+        <div className={`bg-white border-2 ${isDPCBetter ? 'border-emerald-500 shadow-emerald-100 shadow-lg' : 'border-gray-200'} rounded-lg p-6`}>
+          <h3 className="text-xl font-semibold mb-4 flex items-center justify-between">
             DPC + Catastrophic
-            {isDPCBetter && <span style={styles.recommendedBadge}>Recommended</span>}
+            {isDPCBetter && <span className="text-xs bg-emerald-500 text-white px-3 py-1 rounded-full font-medium">Recommended</span>}
           </h3>
-          <div style={styles.totalCost}>
+          <div className="text-4xl font-bold text-gray-900 mb-6">
             ${results.dpcTotalAnnual.toLocaleString()}
-            <span style={styles.perYear}>/year</span>
+            <span className="text-base text-gray-500 font-normal">/year</span>
           </div>
-          <div style={styles.breakdown}>
-            <div style={styles.breakdownItem}>
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex justify-between py-2 text-sm">
               <span>DPC Monthly Fee</span>
               <span>${(results.breakdown.dpc.premiums / 12).toFixed(0)}</span>
             </div>
-            <div style={styles.breakdownItem}>
+            <div className="flex justify-between py-2 text-sm">
               <span>Catastrophic Premium</span>
               <span>${((results.dpcTotalAnnual - results.breakdown.dpc.premiums - results.breakdown.dpc.prescriptions) / 12).toFixed(0)}/mo</span>
             </div>
-            <div style={styles.breakdownItem}>
+            <div className="flex justify-between py-2 text-sm">
               <span>Deductible</span>
               <span>${results.breakdown.dpc.deductible.toLocaleString()}</span>
             </div>
-            <div style={styles.breakdownItem}>
+            <div className="flex justify-between py-2 text-sm">
               <span>Prescriptions</span>
               <span>${results.breakdown.dpc.prescriptions.toLocaleString()}</span>
             </div>
@@ -163,9 +163,9 @@ export default function ComparisonResults({ results, providers }: ComparisonResu
       </div>
 
       {/* DPC Benefits */}
-      <div style={styles.benefitsCard}>
-        <h3 style={styles.benefitsTitle}>Benefits of DPC</h3>
-        <ul style={styles.benefitsList}>
+      <div className="bg-green-50 border border-green-300 rounded-lg p-6 mb-8">
+        <h3 className="text-xl font-semibold text-green-800 mb-4">Benefits of DPC</h3>
+        <ul className="list-none p-0 m-0 space-y-1">
           <li>Unlimited primary care visits - no copays</li>
           <li>Same-day or next-day appointments</li>
           <li>24/7 direct access to your doctor via phone/text</li>
@@ -177,23 +177,23 @@ export default function ComparisonResults({ results, providers }: ComparisonResu
 
       {/* Provider Matches */}
       {providers && providers.length > 0 && (
-        <div style={styles.providersSection}>
-          <h3 style={styles.providersTitle}>Recommended DPC Providers Near You</h3>
-          <div style={styles.providersList}>
+        <div className="mt-12">
+          <h3 className="text-2xl font-semibold mb-6">Recommended DPC Providers Near You</h3>
+          <div className="flex flex-col gap-4">
             {providers.map((match, index) => (
-              <div key={index} style={styles.providerCard}>
-                <div style={styles.providerHeader}>
+              <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h4 style={styles.providerName}>{match.provider.name}</h4>
-                    <p style={styles.practiceName}>{match.provider.practiceName}</p>
+                    <h4 className="text-xl font-semibold mb-1">{match.provider.name}</h4>
+                    <p className="text-gray-500 m-0">{match.provider.practiceName}</p>
                   </div>
-                  <div style={styles.matchScore}>
+                  <div className="bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
                     {match.matchScore}% Match
                   </div>
                 </div>
 
-                <div style={styles.providerDetails}>
-                  <div style={styles.providerInfo}>
+                <div className="flex flex-col gap-4">
+                  <div className="flex gap-6 text-sm text-gray-500">
                     <span>📍 {match.distanceMiles.toFixed(1)} miles away</span>
                     <span>💵 ${match.provider.monthlyFee}/month</span>
                     {match.provider.rating && (
@@ -201,14 +201,14 @@ export default function ComparisonResults({ results, providers }: ComparisonResu
                     )}
                   </div>
 
-                  <div style={styles.matchReasons}>
+                  <div className="flex flex-col gap-2">
                     {match.matchReasons.slice(0, 3).map((reason, i) => (
-                      <span key={i} style={styles.matchReason}>✓ {reason}</span>
+                      <span key={i} className="text-sm text-emerald-600">✓ {reason}</span>
                     ))}
                   </div>
 
-                  <div style={styles.providerContact}>
-                    <a href={`tel:${match.provider.phone}`} style={styles.phoneButton}>
+                  <div className="flex gap-4">
+                    <a href={`tel:${match.provider.phone}`} className="px-4 py-2 bg-blue-600 text-white no-underline rounded text-sm font-medium">
                       📞 {match.provider.phone}
                     </a>
                     {match.provider.website && (
@@ -216,7 +216,7 @@ export default function ComparisonResults({ results, providers }: ComparisonResu
                         href={match.provider.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={styles.websiteButton}
+                        className="px-4 py-2 bg-gray-500 text-white no-underline rounded text-sm font-medium"
                       >
                         🌐 Visit Website
                       </a>
@@ -232,243 +232,3 @@ export default function ComparisonResults({ results, providers }: ComparisonResu
   )
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '2rem',
-  },
-  dataSourceBanner: {
-    backgroundColor: '#eff6ff',
-    border: '2px solid #3b82f6',
-    borderRadius: '8px',
-    padding: '1.5rem',
-    marginBottom: '2rem',
-  },
-  dataSourceHeader: {
-    display: 'flex',
-    gap: '1rem',
-    alignItems: 'start',
-  },
-  dataSourceIcon: {
-    fontSize: '2rem',
-    flexShrink: 0,
-  },
-  dataSourceContent: {
-    flex: 1,
-  },
-  dataSourceTitle: {
-    fontSize: '1.125rem',
-    fontWeight: '600',
-    color: '#1e40af',
-    margin: '0 0 0.5rem 0',
-  },
-  dataSourceText: {
-    fontSize: '0.9rem',
-    color: '#1e3a8a',
-    lineHeight: '1.5',
-    margin: '0 0 1rem 0',
-  },
-  dataSourceDetails: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '0.75rem',
-  },
-  dataSourceBadge: {
-    backgroundColor: '#fff',
-    border: '1px solid #3b82f6',
-    color: '#1e40af',
-    padding: '0.5rem 0.75rem',
-    borderRadius: '6px',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-  },
-  savingsCard: {
-    backgroundColor: '#10b981',
-    color: '#fff',
-    padding: '2rem',
-    borderRadius: '8px',
-    textAlign: 'center',
-    marginBottom: '2rem',
-  },
-  warningCard: {
-    backgroundColor: '#f59e0b',
-    color: '#fff',
-    padding: '2rem',
-    borderRadius: '8px',
-    textAlign: 'center',
-    marginBottom: '2rem',
-  },
-  savingsTitle: {
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    marginBottom: '0.5rem',
-  },
-  savingsAmount: {
-    fontSize: '3rem',
-    fontWeight: 'bold',
-    marginBottom: '0.5rem',
-  },
-  savingsDescription: {
-    fontSize: '1.125rem',
-    opacity: 0.9,
-  },
-  comparisonGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '2rem',
-    marginBottom: '2rem',
-  },
-  planCard: {
-    backgroundColor: '#fff',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    padding: '1.5rem',
-  },
-  planCardRecommended: {
-    backgroundColor: '#fff',
-    border: '2px solid #10b981',
-    borderRadius: '8px',
-    padding: '1.5rem',
-    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)',
-  },
-  planTitle: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    marginBottom: '1rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  recommendedBadge: {
-    fontSize: '0.75rem',
-    backgroundColor: '#10b981',
-    color: '#fff',
-    padding: '0.25rem 0.75rem',
-    borderRadius: '12px',
-    fontWeight: '500',
-  },
-  totalCost: {
-    fontSize: '2.5rem',
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: '1.5rem',
-  },
-  perYear: {
-    fontSize: '1rem',
-    color: '#666',
-    fontWeight: 'normal',
-  },
-  breakdown: {
-    borderTop: '1px solid #e5e7eb',
-    paddingTop: '1rem',
-  },
-  breakdownItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '0.5rem 0',
-    fontSize: '0.9rem',
-  },
-  benefitsCard: {
-    backgroundColor: '#f0fdf4',
-    border: '1px solid #86efac',
-    borderRadius: '8px',
-    padding: '1.5rem',
-    marginBottom: '2rem',
-  },
-  benefitsTitle: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    color: '#166534',
-    marginBottom: '1rem',
-  },
-  benefitsList: {
-    listStyle: 'none',
-    padding: 0,
-    margin: 0,
-  },
-  providersSection: {
-    marginTop: '3rem',
-  },
-  providersTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '600',
-    marginBottom: '1.5rem',
-  },
-  providersList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-  },
-  providerCard: {
-    backgroundColor: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    padding: '1.5rem',
-  },
-  providerHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'start',
-    marginBottom: '1rem',
-  },
-  providerName: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    marginBottom: '0.25rem',
-  },
-  practiceName: {
-    color: '#666',
-    margin: 0,
-  },
-  matchScore: {
-    backgroundColor: '#10b981',
-    color: '#fff',
-    padding: '0.5rem 1rem',
-    borderRadius: '20px',
-    fontSize: '0.875rem',
-    fontWeight: '600',
-  },
-  providerDetails: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-  },
-  providerInfo: {
-    display: 'flex',
-    gap: '1.5rem',
-    fontSize: '0.9rem',
-    color: '#666',
-  },
-  matchReasons: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-  },
-  matchReason: {
-    fontSize: '0.875rem',
-    color: '#059669',
-  },
-  providerContact: {
-    display: 'flex',
-    gap: '1rem',
-  },
-  phoneButton: {
-    padding: '0.5rem 1rem',
-    backgroundColor: '#2563eb',
-    color: '#fff',
-    textDecoration: 'none',
-    borderRadius: '4px',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-  },
-  websiteButton: {
-    padding: '0.5rem 1rem',
-    backgroundColor: '#6b7280',
-    color: '#fff',
-    textDecoration: 'none',
-    borderRadius: '4px',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-  },
-}

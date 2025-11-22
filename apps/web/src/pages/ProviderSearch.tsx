@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { providerService, ProviderSearchResult } from '../services/providerService'
 import ProviderCard from '../components/ProviderCard'
+import ProviderCardSkeleton from '../components/ProviderCardSkeleton'
 import ProviderMap from '../components/ProviderMap'
 import ProviderFilters, { FilterOptions } from '../components/ProviderFilters'
+import ErrorBoundary from '../components/ErrorBoundary'
 import { analytics } from '../utils/analytics'
 
 export default function ProviderSearch() {
@@ -146,19 +148,19 @@ export default function ProviderSearch() {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>Find DPC Providers Near You</h1>
-        <p style={styles.subtitle}>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-blue-600 text-white py-12 px-4 text-center">
+        <h1 className="text-4xl font-bold mb-2">Find DPC Providers Near You</h1>
+        <p className="text-lg opacity-90">
           Search {totalProviders ? totalProviders.toLocaleString() : 'thousands of'} Direct Primary Care providers across the United States
         </p>
       </div>
 
-      <div style={styles.content}>
-        <div style={styles.sidebar}>
-          <form onSubmit={handleSearch} style={styles.form}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>ZIP Code</label>
+      <div className="flex max-w-screen-xl mx-auto py-8 px-4 gap-8">
+        <div className="w-80 flex-shrink-0">
+          <form onSubmit={handleSearch} className="bg-white p-6 rounded-lg shadow-md mb-4">
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">ZIP Code</label>
               <input
                 type="text"
                 pattern="[0-9]{5}"
@@ -166,13 +168,13 @@ export default function ProviderSearch() {
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value)}
                 placeholder="Enter ZIP code"
-                style={styles.input}
+                className="w-full px-3 py-2 text-base border border-gray-300 rounded box-border"
                 required
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Search Radius: {radius} miles
               </label>
               <input
@@ -182,9 +184,9 @@ export default function ProviderSearch() {
                 step="5"
                 value={radius}
                 onChange={(e) => setRadius(parseInt(e.target.value))}
-                style={styles.slider}
+                className="w-full h-1.5 rounded-sm bg-gray-200 outline-none cursor-pointer"
               />
-              <div style={styles.sliderLabels}>
+              <div className="flex justify-between text-xs text-gray-500 mt-2">
                 <span>5 mi</span>
                 <span>50 mi</span>
                 <span>100 mi</span>
@@ -194,10 +196,7 @@ export default function ProviderSearch() {
             <button
               type="submit"
               disabled={loading}
-              style={{
-                ...styles.button,
-                ...(loading ? styles.buttonDisabled : {}),
-              }}
+              className={`w-full px-3 py-2 text-base font-semibold text-white border-none rounded cursor-pointer transition-colors ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
             >
               {loading ? 'Searching...' : 'Search Providers'}
             </button>
@@ -206,7 +205,7 @@ export default function ProviderSearch() {
               <button
                 type="button"
                 onClick={handleReset}
-                style={styles.resetButton}
+                className="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded cursor-pointer mt-2"
               >
                 Clear Search
               </button>
@@ -221,38 +220,39 @@ export default function ProviderSearch() {
           )}
         </div>
 
-        <div style={styles.main}>
+        <div className="flex-1 min-w-0">
           {error && (
-            <div style={styles.error}>
+            <div className="bg-red-50 border border-red-500 rounded-lg p-4 text-red-900 mb-4">
               <strong>Error:</strong> {error}
             </div>
           )}
 
           {loading && (
-            <div style={styles.loading}>
-              <div style={styles.spinner}></div>
-              <p>Searching for providers near {zipCode}...</p>
+            <div className="flex flex-col gap-4">
+              {[1, 2, 3].map((i) => (
+                <ProviderCardSkeleton key={i} />
+              ))}
             </div>
           )}
 
           {!loading && searched && filteredResults.length === 0 && results.length > 0 && (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>🔍</div>
-              <h2 style={styles.emptyTitle}>No providers match your filters</h2>
-              <p style={styles.emptyText}>
+            <div className="text-center py-16 px-8 bg-white rounded-lg shadow-md">
+              <div className="text-6xl mb-4">🔍</div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">No providers match your filters</h2>
+              <p className="text-base text-gray-500">
                 Try adjusting your filters to see more results.
               </p>
             </div>
           )}
 
           {!loading && searched && results.length === 0 && (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>🔍</div>
-              <h2 style={styles.emptyTitle}>No providers found</h2>
-              <p style={styles.emptyText}>
+            <div className="text-center py-16 px-8 bg-white rounded-lg shadow-md">
+              <div className="text-6xl mb-4">🔍</div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">No providers found</h2>
+              <p className="text-base text-gray-500 mb-2">
                 We couldn't find any DPC providers within {radius} miles of {zipCode}.
               </p>
-              <p style={styles.emptyHint}>
+              <p className="text-sm text-gray-400">
                 Try increasing your search radius or searching a different area.
               </p>
             </div>
@@ -261,22 +261,18 @@ export default function ProviderSearch() {
           {!loading && filteredResults.length > 0 && (
             <>
               {/* View toggle */}
-              <div style={styles.viewToggle}>
+              <div className="flex gap-2 mb-6 p-1 bg-gray-100 rounded-lg">
                 <button
+                  type="button"
                   onClick={() => setShowMap(true)}
-                  style={{
-                    ...styles.toggleButton,
-                    ...(showMap ? styles.toggleButtonActive : {}),
-                  }}
+                  className={`flex-1 px-4 py-3 text-sm font-semibold border-none rounded-md cursor-pointer transition-all ${showMap ? 'bg-white text-blue-600 shadow-sm' : 'bg-transparent text-gray-500'}`}
                 >
                   🗺️ Map View
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowMap(false)}
-                  style={{
-                    ...styles.toggleButton,
-                    ...(!showMap ? styles.toggleButtonActive : {}),
-                  }}
+                  className={`flex-1 px-4 py-3 text-sm font-semibold border-none rounded-md cursor-pointer transition-all ${!showMap ? 'bg-white text-blue-600 shadow-sm' : 'bg-transparent text-gray-500'}`}
                 >
                   📋 List View
                 </button>
@@ -284,47 +280,56 @@ export default function ProviderSearch() {
 
               {/* Map view */}
               {showMap && mapCenter && (
-                <div style={styles.mapContainer}>
-                  <ProviderMap
-                    results={filteredResults}
-                    center={mapCenter}
-                    onProviderSelect={(provider) => {
-                      console.log('Selected provider:', provider)
-                      // Scroll to provider card or show details
-                    }}
-                  />
+                <div className="mb-8">
+                  <ErrorBoundary errorBoundaryId="provider-map">
+                    <ProviderMap
+                      results={filteredResults}
+                      center={mapCenter}
+                      onProviderSelect={(provider) => {
+                        console.log('Selected provider:', provider)
+                        // Scroll to provider card or show details
+                      }}
+                    />
+                  </ErrorBoundary>
                 </div>
               )}
 
               {/* List view */}
               {!showMap && (
-                <div style={styles.results}>
-                  {filteredResults.map((result, index) => (
-                    <ProviderCard key={result.id || `provider-${index}`} result={result} />
-                  ))}
-                </div>
+                <ErrorBoundary errorBoundaryId="provider-list">
+                  <div className="flex flex-col">
+                    {filteredResults.map((result, index) => (
+                      <ProviderCard
+                        key={result.id || `provider-${index}`}
+                        result={result}
+                        searchZipCode={zipCode}
+                        searchCenter={mapCenter || undefined}
+                      />
+                    ))}
+                  </div>
+                </ErrorBoundary>
               )}
             </>
           )}
 
           {!searched && !loading && (
-            <div style={styles.placeholder}>
-              <div style={styles.placeholderIcon}>🏥</div>
-              <h2 style={styles.placeholderTitle}>Search for DPC Providers</h2>
-              <p style={styles.placeholderText}>
+            <div className="text-center py-16 px-8 bg-white rounded-lg shadow-md">
+              <div className="text-6xl mb-4">🏥</div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Search for DPC Providers</h2>
+              <p className="text-base text-gray-500 mb-8">
                 Enter your ZIP code to find Direct Primary Care providers in your area.
               </p>
-              <div style={styles.features}>
-                <div style={styles.feature}>
-                  <span style={styles.featureIcon}>✓</span>
+              <div className="flex flex-col gap-3 text-left max-w-md mx-auto">
+                <div className="flex items-center gap-3 text-sm text-gray-700">
+                  <span className="text-emerald-500 font-bold">✓</span>
                   <span>Compare monthly membership fees</span>
                 </div>
-                <div style={styles.feature}>
-                  <span style={styles.featureIcon}>✓</span>
+                <div className="flex items-center gap-3 text-sm text-gray-700">
+                  <span className="text-emerald-500 font-bold">✓</span>
                   <span>Find providers accepting new patients</span>
                 </div>
-                <div style={styles.feature}>
-                  <span style={styles.featureIcon}>✓</span>
+                <div className="flex items-center gap-3 text-sm text-gray-700">
+                  <span className="text-emerald-500 font-bold">✓</span>
                   <span>View included services and specialties</span>
                 </div>
               </div>
@@ -336,245 +341,3 @@ export default function ProviderSearch() {
   )
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#f9fafb',
-  },
-  header: {
-    backgroundColor: '#2563eb',
-    color: '#fff',
-    padding: '3rem 1rem',
-    textAlign: 'center',
-  },
-  title: {
-    fontSize: '2.5rem',
-    fontWeight: 'bold',
-    margin: 0,
-    marginBottom: '0.5rem',
-  },
-  subtitle: {
-    fontSize: '1.125rem',
-    opacity: 0.9,
-    margin: 0,
-  },
-  content: {
-    display: 'flex',
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '2rem 1rem',
-    gap: '2rem',
-  },
-  sidebar: {
-    width: '320px',
-    flexShrink: 0,
-  },
-  form: {
-    backgroundColor: '#fff',
-    padding: '1.5rem',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    marginBottom: '1rem',
-  },
-  formGroup: {
-    marginBottom: '1.5rem',
-  },
-  label: {
-    display: 'block',
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: '0.5rem',
-  },
-  input: {
-    width: '100%',
-    padding: '0.75rem',
-    fontSize: '1rem',
-    border: '1px solid #d1d5db',
-    borderRadius: '4px',
-    boxSizing: 'border-box',
-  },
-  slider: {
-    width: '100%',
-    height: '6px',
-    borderRadius: '3px',
-    background: '#e5e7eb',
-    outline: 'none',
-    cursor: 'pointer',
-  },
-  sliderLabels: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '0.75rem',
-    color: '#6b7280',
-    marginTop: '0.5rem',
-  },
-  button: {
-    width: '100%',
-    padding: '0.75rem',
-    fontSize: '1rem',
-    fontWeight: '600',
-    color: '#fff',
-    backgroundColor: '#2563eb',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-  },
-  buttonDisabled: {
-    backgroundColor: '#9ca3af',
-    cursor: 'not-allowed',
-  },
-  resetButton: {
-    width: '100%',
-    padding: '0.75rem',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-    color: '#374151',
-    backgroundColor: '#fff',
-    border: '1px solid #d1d5db',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    marginTop: '0.5rem',
-  },
-  resultsInfo: {
-    backgroundColor: '#fff',
-    padding: '1rem 1.5rem',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  },
-  resultsCount: {
-    fontSize: '1.125rem',
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: '0.25rem',
-  },
-  resultsHint: {
-    fontSize: '0.875rem',
-    color: '#6b7280',
-  },
-  main: {
-    flex: 1,
-    minWidth: 0,
-  },
-  error: {
-    backgroundColor: '#fee2e2',
-    border: '1px solid #ef4444',
-    borderRadius: '8px',
-    padding: '1rem',
-    color: '#991b1b',
-    marginBottom: '1rem',
-  },
-  loading: {
-    textAlign: 'center',
-    padding: '4rem 2rem',
-  },
-  spinner: {
-    width: '50px',
-    height: '50px',
-    border: '4px solid #e5e7eb',
-    borderTop: '4px solid #2563eb',
-    borderRadius: '50%',
-    margin: '0 auto 1rem',
-    animation: 'spin 1s linear infinite',
-  },
-  emptyState: {
-    textAlign: 'center',
-    padding: '4rem 2rem',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  },
-  emptyIcon: {
-    fontSize: '4rem',
-    marginBottom: '1rem',
-  },
-  emptyTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: '0.5rem',
-  },
-  emptyText: {
-    fontSize: '1rem',
-    color: '#6b7280',
-    marginBottom: '0.5rem',
-  },
-  emptyHint: {
-    fontSize: '0.875rem',
-    color: '#9ca3af',
-  },
-  placeholder: {
-    textAlign: 'center',
-    padding: '4rem 2rem',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  },
-  placeholderIcon: {
-    fontSize: '4rem',
-    marginBottom: '1rem',
-  },
-  placeholderTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: '0.5rem',
-  },
-  placeholderText: {
-    fontSize: '1rem',
-    color: '#6b7280',
-    marginBottom: '2rem',
-  },
-  features: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.75rem',
-    textAlign: 'left',
-    maxWidth: '400px',
-    margin: '0 auto',
-  },
-  feature: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    fontSize: '0.9rem',
-    color: '#374151',
-  },
-  featureIcon: {
-    color: '#10b981',
-    fontWeight: 'bold',
-  },
-  results: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  viewToggle: {
-    display: 'flex',
-    gap: '0.5rem',
-    marginBottom: '1.5rem',
-    padding: '0.25rem',
-    backgroundColor: '#f3f4f6',
-    borderRadius: '8px',
-  },
-  toggleButton: {
-    flex: 1,
-    padding: '0.75rem 1rem',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    backgroundColor: 'transparent',
-    color: '#6b7280',
-    transition: 'all 0.2s',
-  },
-  toggleButtonActive: {
-    backgroundColor: '#fff',
-    color: '#2563eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  },
-  mapContainer: {
-    marginBottom: '2rem',
-  },
-}

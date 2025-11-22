@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { analytics } from '../utils/analytics'
+import FeaturedProvidersSkeleton from '../components/FeaturedProvidersSkeleton'
 
 interface Provider {
   id: string
@@ -130,11 +131,12 @@ export default function SanFranciscoDPC() {
       </div>
 
       {/* Featured Providers */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>San Francisco DPC Providers</h2>
-        {loading ? (
-          <p style={styles.loadingText}>Loading providers...</p>
-        ) : providers.length > 0 ? (
+      {loading ? (
+        <FeaturedProvidersSkeleton count={5} />
+      ) : (
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>San Francisco DPC Providers</h2>
+          {providers.length > 0 ? (
           <div style={styles.providersGrid}>
             {providers.map((provider) => (
               <div key={provider.id} style={styles.providerCard}>
@@ -165,17 +167,18 @@ export default function SanFranciscoDPC() {
               </div>
             ))}
           </div>
-        ) : (
-          <p style={styles.noProvidersText}>
-            Loading provider information... Please try again.
-          </p>
-        )}
-        <div style={styles.centerButton}>
-          <button type="button" onClick={handleSearchProviders} style={styles.viewAllButton}>
-            View All SF Bay Area Providers →
-          </button>
+          ) : (
+            <p style={styles.noProvidersText}>
+              Loading provider information... Please try again.
+            </p>
+          )}
+          <div style={styles.centerButton}>
+            <button type="button" onClick={handleSearchProviders} style={styles.viewAllButton}>
+              View All SF Bay Area Providers →
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* How It Works */}
       <div style={styles.section}>

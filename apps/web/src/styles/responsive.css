@@ -1,0 +1,452 @@
+/**
+ * Mobile-First Responsive Utilities
+ * Breakpoints: 320px (xs), 375px (sm), 768px (md), 1024px (lg), 1280px (xl)
+ */
+
+/* ============================================
+   BASE MOBILE STYLES (320px+)
+   ============================================ */
+
+/* Ensure minimum touch targets */
+button,
+a,
+input[type="submit"],
+input[type="button"],
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Prevent text size adjustment on mobile */
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+/* Safe area padding for notched devices */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ============================================
+   MOBILE UTILITY CLASSES
+   ============================================ */
+
+/* Show/Hide on Mobile */
+.mobile-only {
+  display: block !important;
+}
+
+.desktop-only {
+  display: none !important;
+}
+
+/* Mobile Padding */
+.mobile-padding {
+  padding: 1rem !important;
+}
+
+.mobile-padding-sm {
+  padding: 0.5rem !important;
+}
+
+/* Mobile Margins */
+.mobile-margin {
+  margin: 1rem !important;
+}
+
+.mobile-margin-bottom {
+  margin-bottom: 1rem !important;
+}
+
+/* Full Width on Mobile */
+.mobile-full-width {
+  width: 100% !important;
+}
+
+/* Mobile Text Sizes */
+.mobile-text-sm {
+  font-size: 0.875rem !important;
+}
+
+.mobile-text-base {
+  font-size: 1rem !important;
+}
+
+.mobile-text-lg {
+  font-size: 1.125rem !important;
+}
+
+/* Mobile Touch Targets */
+.mobile-touch-target {
+  min-height: 44px !important;
+  padding: 0.75rem 1rem !important;
+}
+
+/* Mobile Stack (convert flex rows to columns) */
+.mobile-stack {
+  flex-direction: column !important;
+}
+
+/* ============================================
+   SMALL MOBILE (375px+)
+   ============================================ */
+@media (min-width: 375px) {
+  .mobile-padding {
+    padding: 1.25rem !important;
+  }
+}
+
+/* ============================================
+   TABLET (768px+)
+   ============================================ */
+@media (min-width: 768px) {
+  /* Show/Hide on Desktop */
+  .mobile-only {
+    display: none !important;
+  }
+
+  .desktop-only {
+    display: block !important;
+  }
+
+  /* Reset mobile utilities */
+  .mobile-padding {
+    padding: 2rem !important;
+  }
+
+  .mobile-full-width {
+    width: auto !important;
+  }
+
+  .mobile-stack {
+    flex-direction: row !important;
+  }
+}
+
+/* ============================================
+   DESKTOP (1024px+)
+   ============================================ */
+@media (min-width: 1024px) {
+  .desktop-only {
+    display: block !important;
+  }
+}
+
+/* ============================================
+   COMPONENT-SPECIFIC MOBILE STYLES
+   ============================================ */
+
+/* Navigation - Hamburger Menu */
+.mobile-nav-menu {
+  position: fixed;
+  top: 0;
+  left: -100%;
+  width: 80%;
+  max-width: 320px;
+  height: 100vh;
+  background-color: #2563eb;
+  transition: left 0.3s ease-in-out;
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.mobile-nav-menu.open {
+  left: 0;
+}
+
+.mobile-nav-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.mobile-nav-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hamburger-button {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}
+
+.hamburger-line {
+  width: 24px;
+  height: 3px;
+  background-color: #fff;
+  border-radius: 2px;
+  transition: transform 0.3s ease;
+}
+
+@media (min-width: 768px) {
+  .hamburger-button {
+    display: none;
+  }
+
+  .mobile-nav-menu {
+    position: static;
+    width: auto;
+    max-width: none;
+    height: auto;
+    background-color: transparent;
+    padding: 0;
+  }
+
+  .mobile-nav-overlay {
+    display: none;
+  }
+}
+
+/* Cards - Mobile Full Width */
+@media (max-width: 767px) {
+  .provider-card,
+  .comparison-card,
+  .benefit-card,
+  .stat-card {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* Forms - Mobile Stacking */
+@media (max-width: 767px) {
+  .form-row,
+  .input-group {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  .form-input,
+  .form-select {
+    width: 100% !important;
+  }
+}
+
+/* Grid - Mobile Single Column */
+@media (max-width: 767px) {
+  .grid-2-cols,
+  .grid-3-cols,
+  .grid-4-cols {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Sidebar - Mobile Collapse */
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 80%;
+    max-width: 320px;
+    height: 100vh;
+    background-color: #fff;
+    transition: left 0.3s ease-in-out;
+    z-index: 1000;
+    overflow-y: auto;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Map - Mobile Height */
+@media (max-width: 767px) {
+  .map-container {
+    height: 400px !important;
+  }
+}
+
+/* Hero Sections - Mobile Typography */
+@media (max-width: 767px) {
+  .hero-title {
+    font-size: 2rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem !important;
+  }
+
+  .hero-description {
+    font-size: 1rem !important;
+  }
+}
+
+/* Stats Grid - Mobile Stack */
+@media (max-width: 767px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+  }
+}
+
+/* Benefits Grid - Mobile Single Column */
+@media (max-width: 767px) {
+  .benefits-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Buttons - Mobile Full Width */
+@media (max-width: 767px) {
+  .button-group {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  .button-group button,
+  .button-group a {
+    width: 100% !important;
+  }
+}
+
+/* Tables - Mobile Scroll */
+@media (max-width: 767px) {
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 600px;
+  }
+}
+
+/* Provider Filters - Mobile Collapse */
+@media (max-width: 767px) {
+  .filters-container {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: #fff;
+    border-bottom: 1px solid #e5e7eb;
+  }
+}
+
+/* Desktop Navigation - Show at tablet+ */
+@media (min-width: 768px) {
+  .nav-desktop {
+    display: flex !important;
+  }
+
+  .hamburger-button {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================ */
+
+/* Focus Visible for Keyboard Navigation */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Skip to Main Content Link */
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #2563eb;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+}
+
+.skip-to-main:focus {
+  top: 0;
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+  .mobile-nav-menu,
+  .hamburger-button,
+  .sidebar,
+  button,
+  .no-print {
+    display: none !important;
+  }
+}

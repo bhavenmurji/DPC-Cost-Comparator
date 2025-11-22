@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import ComparisonForm from './components/ComparisonForm'
 import ComparisonResults from './components/ComparisonResults'
+import ComparisonResultsSkeleton from './components/ComparisonResultsSkeleton'
 import ProviderSearch from './pages/ProviderSearch'
 import ProviderDetails from './pages/ProviderDetails'
 import UserPreferences from './components/UserPreferences'
@@ -10,6 +11,7 @@ import SanFranciscoDPC from './pages/SanFranciscoDPC'
 import SanDiegoDPC from './pages/SanDiegoDPC'
 import NewYorkDPC from './pages/NewYorkDPC'
 import ChicagoDPC from './pages/ChicagoDPC'
+import ErrorBoundary from './components/ErrorBoundary'
 import { initAnalytics, analytics } from './utils/analytics'
 
 function App() {
@@ -17,6 +19,7 @@ function App() {
   const [results, setResults] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Initialize analytics on app mount
   useEffect(() => {
@@ -27,6 +30,23 @@ function App() {
   useEffect(() => {
     analytics.trackPageView(location.pathname)
   }, [location.pathname])
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [location.pathname])
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [mobileMenuOpen])
 
   const handleSubmit = async (formData: any) => {
     setLoading(true)
@@ -79,11 +99,27 @@ function App() {
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', fontFamily: 'system-ui' }}>
       <header style={styles.header}>
         <div style={styles.headerContent}>
-          <div>
-            <h1 style={styles.title}>HealthPartnershipX</h1>
-            <p style={styles.subtitle}>DPC Cost Comparison Calculator</p>
+          <div style={styles.headerLeft}>
+            <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <h1 style={styles.title}>HealthPartnershipX</h1>
+              <p style={styles.subtitle}>DPC Cost Comparison Calculator</p>
+            </Link>
           </div>
-          <nav style={styles.nav}>
+
+          {/* Mobile Hamburger Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={styles.hamburger}
+            aria-label="Toggle navigation menu"
+          >
+            <span style={styles.hamburgerLine}></span>
+            <span style={styles.hamburgerLine}></span>
+            <span style={styles.hamburgerLine}></span>
+          </button>
+
+          {/* Desktop Navigation */}
+          <nav style={styles.navDesktop} className="nav-desktop">
             <Link
               to="/"
               style={{
@@ -115,6 +151,53 @@ function App() {
         </div>
       </header>
 
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <>
+          <div style={styles.mobileOverlay} onClick={() => setMobileMenuOpen(false)} />
+          <nav style={styles.mobileNav}>
+            <div style={styles.mobileNavHeader}>
+              <h2 style={styles.mobileNavTitle}>Menu</h2>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                style={styles.mobileCloseButton}
+                aria-label="Close menu"
+              >
+                ×
+              </button>
+            </div>
+            <Link
+              to="/"
+              style={{
+                ...styles.mobileNavLink,
+                ...(location.pathname === '/' ? styles.mobileNavLinkActive : {}),
+              }}
+            >
+              Cost Calculator
+            </Link>
+            <Link
+              to="/providers"
+              style={{
+                ...styles.mobileNavLink,
+                ...(location.pathname === '/providers' ? styles.mobileNavLinkActive : {}),
+              }}
+            >
+              Find Providers
+            </Link>
+            <Link
+              to="/preferences"
+              style={{
+                ...styles.mobileNavLink,
+                ...(location.pathname === '/preferences' ? styles.mobileNavLinkActive : {}),
+              }}
+            >
+              My Preferences
+            </Link>
+          </nav>
+        </>
+      )}
+
       <Routes>
         <Route
           path="/"
@@ -133,13 +216,21 @@ function App() {
                   <button onClick={handleReset} style={styles.resetButton}>
                     ← Start New Comparison
                   </button>
-                  <ComparisonResults
-                    results={{
-                      ...results.comparison,
-                      dataSource: results.dataSource || results.comparison.dataSource,
-                    }}
-                    providers={results.providers}
-                  />
+                  {loading ? (
+                    <ErrorBoundary errorBoundaryId="comparison-results-skeleton">
+                      <ComparisonResultsSkeleton />
+                    </ErrorBoundary>
+                  ) : (
+                    <ErrorBoundary errorBoundaryId="comparison-results">
+                      <ComparisonResults
+                        results={{
+                          ...results.comparison,
+                          dataSource: results.dataSource || results.comparison.dataSource,
+                        }}
+                        providers={results.providers}
+                      />
+                    </ErrorBoundary>
+                  )}
                 </>
               )}
             </main>
@@ -168,8 +259,11 @@ const styles: Record<string, React.CSSProperties> = {
   header: {
     backgroundColor: '#2563eb',
     color: '#fff',
-    padding: '2rem 1rem',
+    padding: '1rem',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
   },
   headerContent: {
     maxWidth: '1200px',
@@ -177,19 +271,49 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: '1rem',
+  },
+  headerLeft: {
+    flex: 1,
+    minWidth: 0,
   },
   title: {
-    fontSize: '2rem',
+    fontSize: 'clamp(1.25rem, 4vw, 2rem)',
     fontWeight: 'bold',
     margin: 0,
+    lineHeight: 1.2,
   },
   subtitle: {
-    fontSize: '1.125rem',
+    fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)',
     opacity: 0.9,
-    margin: '0.5rem 0 0 0',
+    margin: '0.25rem 0 0 0',
+    lineHeight: 1.3,
   },
-  nav: {
+  hamburger: {
     display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    background: 'transparent',
+    border: 'none',
+    padding: '0.5rem',
+    cursor: 'pointer',
+    minWidth: '44px',
+    minHeight: '44px',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    zIndex: 101,
+  },
+  hamburgerLine: {
+    width: '24px',
+    height: '3px',
+    backgroundColor: '#fff',
+    borderRadius: '2px',
+    transition: 'transform 0.3s ease',
+    display: 'block',
+  },
+  navDesktop: {
+    display: 'none',
     gap: '1rem',
   },
   navLink: {
@@ -200,17 +324,87 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '1rem',
     fontWeight: '500',
     transition: 'background-color 0.2s',
+    minHeight: '44px',
+    display: 'flex',
+    alignItems: 'center',
   },
   navLinkActive: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
+  mobileOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 998,
+    animation: 'fadeIn 0.3s ease',
+  },
+  mobileNav: {
+    position: 'fixed',
+    top: 0,
+    right: 0,
+    width: '80%',
+    maxWidth: '320px',
+    height: '100vh',
+    backgroundColor: '#2563eb',
+    zIndex: 999,
+    overflowY: 'auto',
+    padding: '1rem',
+    boxShadow: '-2px 0 8px rgba(0,0,0,0.2)',
+    animation: 'slideInRight 0.3s ease',
+  },
+  mobileNavHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2rem',
+    paddingBottom: '1rem',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  mobileNavTitle: {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    margin: 0,
+    color: '#fff',
+  },
+  mobileCloseButton: {
+    background: 'transparent',
+    border: 'none',
+    color: '#fff',
+    fontSize: '2rem',
+    cursor: 'pointer',
+    padding: '0.25rem 0.5rem',
+    minWidth: '44px',
+    minHeight: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    lineHeight: 1,
+  },
+  mobileNavLink: {
+    color: '#fff',
+    textDecoration: 'none',
+    padding: '1rem',
+    borderRadius: '4px',
+    fontSize: '1.125rem',
+    fontWeight: '500',
+    display: 'block',
+    marginBottom: '0.5rem',
+    minHeight: '44px',
+    transition: 'background-color 0.2s',
+  },
+  mobileNavLinkActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
   main: {
-    padding: '2rem 1rem',
+    padding: '1rem',
     minHeight: 'calc(100vh - 200px)',
   },
   error: {
     maxWidth: '800px',
-    margin: '0 auto 2rem',
+    margin: '0 auto 1rem',
     padding: '1rem',
     backgroundColor: '#fee2e2',
     border: '1px solid #ef4444',
@@ -218,7 +412,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#991b1b',
   },
   resetButton: {
-    marginBottom: '2rem',
+    marginBottom: '1rem',
     padding: '0.75rem 1.5rem',
     fontSize: '1rem',
     backgroundColor: '#fff',
@@ -226,6 +420,8 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '4px',
     cursor: 'pointer',
     fontWeight: '500',
+    minHeight: '44px',
+    width: '100%',
   },
   footer: {
     backgroundColor: '#1f2937',
@@ -233,6 +429,7 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
     padding: '2rem 1rem',
     marginTop: '4rem',
+    fontSize: '0.875rem',
   },
 }
 

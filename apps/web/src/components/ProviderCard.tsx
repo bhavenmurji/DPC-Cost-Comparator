@@ -5,9 +5,11 @@ import { analytics } from '../utils/analytics'
 interface ProviderCardProps {
   result: ProviderSearchResult
   onSelect?: (result: ProviderSearchResult) => void
+  searchZipCode?: string
+  searchCenter?: { lat: number; lng: number }
 }
 
-export default function ProviderCard({ result }: ProviderCardProps) {
+export default function ProviderCard({ result, searchZipCode, searchCenter }: ProviderCardProps) {
   const navigate = useNavigate()
   // API returns flat provider objects with distance property
   const distance = result.distance || 0
@@ -24,7 +26,12 @@ export default function ProviderCard({ result }: ProviderCardProps) {
       distanceMiles: distance,
     })
 
-    navigate(`/providers/${result.id}`)
+    navigate(`/providers/${result.id}`, {
+      state: {
+        searchZipCode,
+        searchCenter,
+      },
+    })
   }
 
   const handlePhoneClick = (e: React.MouseEvent) => {
@@ -54,28 +61,25 @@ export default function ProviderCard({ result }: ProviderCardProps) {
     navigate(`/provider/claim/${result.id}`)
   }
 
-  // Check if this provider has been claimed
-  const isClaimed = result.claimedByUserId != null
-
   return (
-    <div style={styles.card} onClick={handleViewDetails}>
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          <h3 style={styles.name}>{result.name}</h3>
+    <div className="bg-white border border-gray-200 rounded-lg p-6 mb-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewDetails}>
+      <div className="flex justify-between items-start mb-4 pb-4 border-b border-gray-100">
+        <div className="flex-1">
+          <h3 className="text-xl font-semibold mb-1 text-gray-900">{result.name}</h3>
           {rating > 0 && (
-            <p style={styles.practiceName}>Rating: {rating.toFixed(1)}/5</p>
+            <p className="text-sm text-gray-500 m-0">Rating: {rating.toFixed(1)}/5</p>
           )}
         </div>
-        <div style={styles.matchBadge}>
+        <div className="bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
           {distance.toFixed(1)} mi
         </div>
       </div>
 
-      <div style={styles.details}>
-        <div style={styles.row}>
-          <span style={styles.icon}>📍</span>
-          <div style={styles.info}>
-            <div style={styles.address}>
+      <div className="flex flex-col gap-3 mb-4">
+        <div className="flex gap-3 items-start">
+          <span className="text-xl">📍</span>
+          <div className="flex-1">
+            <div className="text-sm text-gray-700 leading-relaxed">
               {result.address}
               {result.city && result.state && (
                 <>
@@ -84,24 +88,24 @@ export default function ProviderCard({ result }: ProviderCardProps) {
                 </>
               )}
             </div>
-            <div style={styles.distance}>{distance.toFixed(1)} miles away</div>
+            <div className="text-sm text-gray-500 mt-1">{distance.toFixed(1)} miles away</div>
           </div>
         </div>
 
-        <div style={styles.row}>
-          <span style={styles.icon}>💵</span>
-          <div style={styles.info}>
-            <div style={styles.fee}>${result.monthlyFee}/month</div>
+        <div className="flex gap-3 items-start">
+          <span className="text-xl">💵</span>
+          <div className="flex-1">
+            <div className="text-base font-semibold text-gray-900">${result.monthlyFee}/month</div>
           </div>
         </div>
 
         {result.phone && (
-          <div style={styles.row}>
-            <span style={styles.icon}>📞</span>
-            <div style={styles.info}>
+          <div className="flex gap-3 items-start">
+            <span className="text-xl">📞</span>
+            <div className="flex-1">
               <a
                 href={`tel:${result.phone}`}
-                style={styles.link}
+                className="text-blue-600 no-underline text-sm"
                 onClick={handlePhoneClick}
               >
                 {result.phone}
@@ -111,14 +115,14 @@ export default function ProviderCard({ result }: ProviderCardProps) {
         )}
 
         {result.website && (
-          <div style={styles.row}>
-            <span style={styles.icon}>🌐</span>
-            <div style={styles.info}>
+          <div className="flex gap-3 items-start">
+            <span className="text-xl">🌐</span>
+            <div className="flex-1">
               <a
                 href={result.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={styles.link}
+                className="text-blue-600 no-underline text-sm"
                 onClick={handleWebsiteClick}
               >
                 Visit Website
@@ -128,26 +132,24 @@ export default function ProviderCard({ result }: ProviderCardProps) {
         )}
       </div>
 
-      <div style={styles.footer}>
-        <div style={styles.status}>
-          <span style={styles.dataSource}>
+      <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
+        <div className="flex-1">
+          <span className="text-gray-500 text-xs">
             Source: {result.dataSource?.source || 'Unknown'}
           </span>
         </div>
-        <div style={styles.buttonGroup}>
-          {!isClaimed && (
-            <button
-              type="button"
-              onClick={handleClaimPractice}
-              style={styles.claimButton}
-            >
-              🏥 Claim Practice
-            </button>
-          )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleClaimPractice}
+            className="bg-emerald-500 text-white px-4 py-2 rounded border-none text-sm font-semibold cursor-pointer whitespace-nowrap"
+          >
+            🏥 Claim Practice
+          </button>
           <button
             type="button"
             onClick={handleViewDetails}
-            style={styles.selectButton}
+            className="bg-blue-600 text-white px-6 py-2 rounded border-none text-sm font-semibold cursor-pointer"
           >
             View Details
           </button>
@@ -157,163 +159,3 @@ export default function ProviderCard({ result }: ProviderCardProps) {
   )
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  card: {
-    backgroundColor: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    padding: '1.5rem',
-    marginBottom: '1rem',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    transition: 'box-shadow 0.2s',
-    cursor: 'pointer',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'start',
-    marginBottom: '1rem',
-    paddingBottom: '1rem',
-    borderBottom: '1px solid #f3f4f6',
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  name: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    margin: 0,
-    marginBottom: '0.25rem',
-    color: '#1a1a1a',
-  },
-  practiceName: {
-    fontSize: '0.9rem',
-    color: '#666',
-    margin: 0,
-  },
-  matchBadge: {
-    backgroundColor: '#10b981',
-    color: '#fff',
-    padding: '0.5rem 1rem',
-    borderRadius: '20px',
-    fontSize: '0.875rem',
-    fontWeight: '600',
-  },
-  details: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.75rem',
-    marginBottom: '1rem',
-  },
-  row: {
-    display: 'flex',
-    gap: '0.75rem',
-    alignItems: 'start',
-  },
-  icon: {
-    fontSize: '1.25rem',
-  },
-  info: {
-    flex: 1,
-  },
-  address: {
-    fontSize: '0.9rem',
-    color: '#374151',
-    lineHeight: '1.5',
-  },
-  distance: {
-    fontSize: '0.875rem',
-    color: '#6b7280',
-    marginTop: '0.25rem',
-  },
-  fee: {
-    fontSize: '1rem',
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  familyFee: {
-    fontSize: '0.875rem',
-    color: '#6b7280',
-    marginTop: '0.25rem',
-  },
-  link: {
-    color: '#2563eb',
-    textDecoration: 'none',
-    fontSize: '0.9rem',
-  },
-  services: {
-    marginTop: '1rem',
-    paddingTop: '1rem',
-    borderTop: '1px solid #f3f4f6',
-  },
-  servicesTitle: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: '0.5rem',
-  },
-  servicesList: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '0.5rem',
-  },
-  serviceTag: {
-    backgroundColor: '#f0fdf4',
-    color: '#166534',
-    padding: '0.25rem 0.75rem',
-    borderRadius: '12px',
-    fontSize: '0.75rem',
-    fontWeight: '500',
-  },
-  footer: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: '1rem',
-    paddingTop: '1rem',
-    borderTop: '1px solid #f3f4f6',
-  },
-  status: {
-    flex: 1,
-  },
-  buttonGroup: {
-    display: 'flex',
-    gap: '0.5rem',
-  },
-  claimButton: {
-    backgroundColor: '#10b981',
-    color: '#fff',
-    padding: '0.5rem 1rem',
-    borderRadius: '4px',
-    border: 'none',
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  },
-  accepting: {
-    color: '#059669',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-  },
-  notAccepting: {
-    color: '#dc2626',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-  },
-  dataSource: {
-    color: '#6b7280',
-    fontSize: '0.75rem',
-    fontWeight: '400',
-  },
-  selectButton: {
-    backgroundColor: '#2563eb',
-    color: '#fff',
-    padding: '0.5rem 1.5rem',
-    borderRadius: '4px',
-    border: 'none',
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-}

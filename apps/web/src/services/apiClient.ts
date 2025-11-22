@@ -1,12 +1,20 @@
 // API Client Service
 // Centralized API communication with error handling
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000'
+import { getEnv } from '../config/env'
 
+/**
+ * API Client with built-in error handling and request/response logging
+ */
 class ApiClient {
   private baseUrl: string
 
   constructor(baseUrl: string) {
+    if (!baseUrl) {
+      throw new Error(
+        'API_URL is not configured. Please set VITE_API_URL in your .env file. See .env.example for details.'
+      )
+    }
     this.baseUrl = baseUrl
   }
 
@@ -77,4 +85,6 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient(API_URL)
+// Initialize client with validated environment config
+const env = getEnv()
+export const apiClient = new ApiClient(env.apiUrl)

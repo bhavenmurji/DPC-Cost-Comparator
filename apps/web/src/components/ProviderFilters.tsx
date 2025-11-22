@@ -64,32 +64,32 @@ export default function ProviderFilters({ onFilterChange, totalResults }: Provid
     filters.minRating > 0
 
   return (
-    <div style={styles.container}>
+    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
       {/* Filter Header */}
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          <h3 style={styles.title}>Filters & Sort</h3>
-          <span style={styles.resultCount}>{totalResults} providers</span>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-4">
+          <h3 className="text-lg font-semibold m-0 text-gray-900">Filters & Sort</h3>
+          <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{totalResults} providers</span>
         </div>
-        <div style={styles.headerRight}>
+        <div className="flex gap-2">
           {hasActiveFilters && (
-            <button onClick={resetFilters} style={styles.resetButton}>
+            <button onClick={resetFilters} className="px-4 py-2 text-sm bg-white border border-gray-200 rounded cursor-pointer text-gray-500 font-medium">
               Clear Filters
             </button>
           )}
-          <button onClick={() => setIsExpanded(!isExpanded)} style={styles.toggleButton}>
+          <button onClick={() => setIsExpanded(!isExpanded)} className="px-4 py-2 text-sm bg-blue-600 border-none rounded cursor-pointer text-white font-medium">
             {isExpanded ? '− Less' : '+ More'}
           </button>
         </div>
       </div>
 
       {/* Sort Options */}
-      <div style={styles.sortSection}>
-        <label style={styles.label}>Sort by:</label>
+      <div className="flex items-center gap-4">
+        <label className="text-sm font-semibold text-gray-700">Sort by:</label>
         <select
           value={filters.sortBy}
           onChange={(e) => updateFilter('sortBy', e.target.value as FilterOptions['sortBy'])}
-          style={styles.select}
+          className="flex-1 px-2 py-2 text-sm border border-gray-300 rounded bg-white"
         >
           <option value="distance">Closest to Me</option>
           <option value="price">Lowest Price</option>
@@ -100,10 +100,10 @@ export default function ProviderFilters({ onFilterChange, totalResults }: Provid
 
       {/* Expanded Filters */}
       {isExpanded && (
-        <div style={styles.expandedFilters}>
+        <div className="mt-6 pt-6 border-t border-gray-200 flex flex-col gap-6">
           {/* Price Filter */}
-          <div style={styles.filterGroup}>
-            <label style={styles.label}>
+          <div className="flex flex-col gap-3">
+            <label className="text-sm font-semibold text-gray-700">
               Maximum Monthly Fee: ${filters.maxMonthlyFee}
             </label>
             <input
@@ -113,9 +113,9 @@ export default function ProviderFilters({ onFilterChange, totalResults }: Provid
               step="25"
               value={filters.maxMonthlyFee}
               onChange={(e) => updateFilter('maxMonthlyFee', parseInt(e.target.value))}
-              style={styles.slider}
+              className="w-full h-1.5 rounded-sm bg-gray-200 outline-none cursor-pointer"
             />
-            <div style={styles.sliderLabels}>
+            <div className="flex justify-between text-xs text-gray-500">
               <span>$0</span>
               <span>$250</span>
               <span>$500+</span>
@@ -123,17 +123,14 @@ export default function ProviderFilters({ onFilterChange, totalResults }: Provid
           </div>
 
           {/* Rating Filter */}
-          <div style={styles.filterGroup}>
-            <label style={styles.label}>Minimum Rating</label>
-            <div style={styles.ratingButtons}>
+          <div className="flex flex-col gap-3">
+            <label className="text-sm font-semibold text-gray-700">Minimum Rating</label>
+            <div className="grid grid-cols-4 gap-2">
               {[0, 3, 4, 4.5].map((rating) => (
                 <button
                   key={rating}
                   onClick={() => updateFilter('minRating', rating)}
-                  style={{
-                    ...styles.ratingButton,
-                    ...(filters.minRating === rating ? styles.ratingButtonActive : {}),
-                  }}
+                  className={`px-2 py-2 text-sm border rounded cursor-pointer font-medium ${filters.minRating === rating ? 'bg-amber-400 border-amber-500 text-white' : 'bg-gray-100 border-gray-200 text-gray-700'}`}
                 >
                   {rating === 0 ? 'Any' : `${rating}+ ★`}
                 </button>
@@ -142,33 +139,33 @@ export default function ProviderFilters({ onFilterChange, totalResults }: Provid
           </div>
 
           {/* Accepting Patients Filter */}
-          <div style={styles.filterGroup}>
-            <label style={styles.label}>Accepting New Patients</label>
-            <div style={styles.radioGroup}>
-              <label style={styles.radioLabel}>
+          <div className="flex flex-col gap-3">
+            <label className="text-sm font-semibold text-gray-700">Accepting New Patients</label>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
                 <input
                   type="radio"
                   checked={filters.acceptingPatients === null}
                   onChange={() => updateFilter('acceptingPatients', null)}
-                  style={styles.radio}
+                  className="w-4 h-4 cursor-pointer"
                 />
                 All Providers
               </label>
-              <label style={styles.radioLabel}>
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
                 <input
                   type="radio"
                   checked={filters.acceptingPatients === true}
                   onChange={() => updateFilter('acceptingPatients', true)}
-                  style={styles.radio}
+                  className="w-4 h-4 cursor-pointer"
                 />
                 Yes, Accepting
               </label>
-              <label style={styles.radioLabel}>
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
                 <input
                   type="radio"
                   checked={filters.acceptingPatients === false}
                   onChange={() => updateFilter('acceptingPatients', false)}
-                  style={styles.radio}
+                  className="w-4 h-4 cursor-pointer"
                 />
                 Not Accepting
               </label>
@@ -176,16 +173,16 @@ export default function ProviderFilters({ onFilterChange, totalResults }: Provid
           </div>
 
           {/* Specialties Filter */}
-          <div style={styles.filterGroup}>
-            <label style={styles.label}>Specialties</label>
-            <div style={styles.checkboxGrid}>
+          <div className="flex flex-col gap-3">
+            <label className="text-sm font-semibold text-gray-700">Specialties</label>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
               {commonSpecialties.map((specialty) => (
-                <label key={specialty} style={styles.checkboxLabel}>
+                <label key={specialty} className="flex items-center gap-2 cursor-pointer text-sm">
                   <input
                     type="checkbox"
                     checked={filters.specialties.includes(specialty)}
                     onChange={() => toggleSpecialty(specialty)}
-                    style={styles.checkbox}
+                    className="w-4 h-4 cursor-pointer"
                   />
                   {specialty}
                 </label>
@@ -196,161 +193,4 @@ export default function ProviderFilters({ onFilterChange, totalResults }: Provid
       )}
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    backgroundColor: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    padding: '1rem',
-    marginBottom: '1.5rem',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '1rem',
-  },
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-  },
-  headerRight: {
-    display: 'flex',
-    gap: '0.5rem',
-  },
-  title: {
-    fontSize: '1.125rem',
-    fontWeight: '600',
-    margin: 0,
-    color: '#1a1a1a',
-  },
-  resultCount: {
-    fontSize: '0.875rem',
-    color: '#6b7280',
-    backgroundColor: '#f3f4f6',
-    padding: '0.25rem 0.75rem',
-    borderRadius: '12px',
-  },
-  resetButton: {
-    padding: '0.5rem 1rem',
-    fontSize: '0.875rem',
-    backgroundColor: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  toggleButton: {
-    padding: '0.5rem 1rem',
-    fontSize: '0.875rem',
-    backgroundColor: '#2563eb',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    color: '#fff',
-    fontWeight: '500',
-  },
-  sortSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-  },
-  label: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    color: '#374151',
-  },
-  select: {
-    flex: 1,
-    padding: '0.5rem',
-    fontSize: '0.875rem',
-    border: '1px solid #d1d5db',
-    borderRadius: '4px',
-    backgroundColor: '#fff',
-  },
-  expandedFilters: {
-    marginTop: '1.5rem',
-    paddingTop: '1.5rem',
-    borderTop: '1px solid #e5e7eb',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem',
-  },
-  filterGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.75rem',
-  },
-  slider: {
-    width: '100%',
-    height: '6px',
-    borderRadius: '3px',
-    background: '#e5e7eb',
-    outline: 'none',
-    cursor: 'pointer',
-  },
-  sliderLabels: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '0.75rem',
-    color: '#6b7280',
-  },
-  ratingButtons: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '0.5rem',
-  },
-  ratingButton: {
-    padding: '0.5rem',
-    fontSize: '0.875rem',
-    backgroundColor: '#f3f4f6',
-    border: '1px solid #e5e7eb',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontWeight: '500',
-    color: '#374151',
-  },
-  ratingButtonActive: {
-    backgroundColor: '#fbbf24',
-    borderColor: '#f59e0b',
-    color: '#fff',
-  },
-  radioGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-  },
-  radioLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
-  },
-  radio: {
-    width: '16px',
-    height: '16px',
-    cursor: 'pointer',
-  },
-  checkboxGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-    gap: '0.5rem',
-  },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
-  },
-  checkbox: {
-    width: '16px',
-    height: '16px',
-    cursor: 'pointer',
-  },
 }

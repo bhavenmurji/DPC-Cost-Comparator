@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { analytics } from '../utils/analytics'
+import FeaturedProvidersSkeleton from '../components/FeaturedProvidersSkeleton'
 
 interface Provider {
   id: string
@@ -129,11 +130,12 @@ export default function LosAngelesDPC() {
       </div>
 
       {/* Featured Providers */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Featured LA Providers</h2>
-        {loading ? (
-          <p style={styles.loadingText}>Loading providers...</p>
-        ) : providers.length > 0 ? (
+      {loading ? (
+        <FeaturedProvidersSkeleton count={5} />
+      ) : (
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>Featured LA Providers</h2>
+          {providers.length > 0 ? (
           <div style={styles.providersGrid}>
             {providers.map((provider) => (
               <div key={provider.id} style={styles.providerCard}>
@@ -164,17 +166,18 @@ export default function LosAngelesDPC() {
               </div>
             ))}
           </div>
-        ) : (
-          <p style={styles.noProvidersText}>
-            Loading provider information... Please try again.
-          </p>
-        )}
-        <div style={styles.centerButton}>
-          <button type="button" onClick={handleSearchProviders} style={styles.viewAllButton}>
-            View All Los Angeles Providers →
-          </button>
+          ) : (
+            <p style={styles.noProvidersText}>
+              Loading provider information... Please try again.
+            </p>
+          )}
+          <div style={styles.centerButton}>
+            <button type="button" onClick={handleSearchProviders} style={styles.viewAllButton}>
+              View All Los Angeles Providers →
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* How It Works */}
       <div style={styles.section}>
@@ -274,22 +277,24 @@ const styles = {
   hero: {
     backgroundColor: '#2563eb',
     color: '#fff',
-    padding: '4rem 2rem',
+    padding: 'clamp(2rem, 5vw, 4rem) 1rem',
     textAlign: 'center' as const,
   },
   heroTitle: {
-    fontSize: '3rem',
+    fontSize: 'clamp(1.75rem, 6vw, 3rem)',
     fontWeight: '700',
     margin: '0 0 1rem 0',
+    lineHeight: 1.2,
   },
   heroSubtitle: {
-    fontSize: '1.5rem',
+    fontSize: 'clamp(1.125rem, 4vw, 1.5rem)',
     fontWeight: '500',
     margin: '0 0 1rem 0',
     opacity: 0.9,
+    lineHeight: 1.3,
   },
   heroDescription: {
-    fontSize: '1.125rem',
+    fontSize: 'clamp(1rem, 2.5vw, 1.125rem)',
     maxWidth: '800px',
     margin: '0 auto 2rem auto',
     lineHeight: '1.6',
@@ -300,6 +305,10 @@ const styles = {
     gap: '1rem',
     justifyContent: 'center',
     flexWrap: 'wrap' as const,
+    flexDirection: 'column' as const,
+    alignItems: 'stretch',
+    maxWidth: '400px',
+    margin: '0 auto',
   },
   primaryButton: {
     backgroundColor: '#fff',
@@ -311,6 +320,8 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    minHeight: '48px',
+    width: '100%',
   },
   secondaryButton: {
     backgroundColor: 'transparent',
@@ -321,15 +332,17 @@ const styles = {
     fontSize: '1.125rem',
     fontWeight: '600',
     cursor: 'pointer',
+    minHeight: '48px',
+    width: '100%',
   },
   statsSection: {
-    padding: '3rem 2rem',
+    padding: 'clamp(2rem, 5vw, 3rem) 1rem',
     backgroundColor: '#fff',
   },
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '2rem',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: 'clamp(1rem, 3vw, 2rem)',
     maxWidth: '1200px',
     margin: '0 auto',
   },
@@ -337,36 +350,37 @@ const styles = {
     textAlign: 'center' as const,
   },
   statNumber: {
-    fontSize: '2.5rem',
+    fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
     fontWeight: '700',
     color: '#2563eb',
     marginBottom: '0.5rem',
   },
   statLabel: {
-    fontSize: '1rem',
+    fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
     color: '#6b7280',
     fontWeight: '500',
   },
   section: {
-    padding: '4rem 2rem',
+    padding: 'clamp(2rem, 6vw, 4rem) 1rem',
     maxWidth: '1200px',
     margin: '0 auto',
   },
   sectionTitle: {
-    fontSize: '2.5rem',
+    fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
     fontWeight: '700',
     textAlign: 'center' as const,
-    marginBottom: '3rem',
+    marginBottom: 'clamp(2rem, 4vw, 3rem)',
     color: '#1f2937',
+    lineHeight: 1.2,
   },
   benefitsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '2rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
+    gap: 'clamp(1rem, 3vw, 2rem)',
   },
   benefitCard: {
     backgroundColor: '#fff',
-    padding: '2rem',
+    padding: 'clamp(1.5rem, 4vw, 2rem)',
     borderRadius: '12px',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
     border: '1px solid #e5e7eb',
@@ -388,13 +402,13 @@ const styles = {
   },
   providersGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: '1.5rem',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
+    gap: 'clamp(1rem, 3vw, 1.5rem)',
     marginBottom: '2rem',
   },
   providerCard: {
     backgroundColor: '#fff',
-    padding: '1.5rem',
+    padding: 'clamp(1rem, 3vw, 1.5rem)',
     borderRadius: '12px',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
     border: '1px solid #e5e7eb',
@@ -442,6 +456,7 @@ const styles = {
     fontSize: '1rem',
     fontWeight: '600',
     cursor: 'pointer',
+    minHeight: '44px',
   },
   loadingText: {
     textAlign: 'center' as const,
@@ -470,8 +485,8 @@ const styles = {
   },
   stepsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '2rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
+    gap: 'clamp(1.5rem, 4vw, 2rem)',
   },
   stepCard: {
     textAlign: 'center' as const,
@@ -503,24 +518,30 @@ const styles = {
   ctaSection: {
     backgroundColor: '#1f2937',
     color: '#fff',
-    padding: '4rem 2rem',
+    padding: 'clamp(3rem, 6vw, 4rem) 1rem',
     textAlign: 'center' as const,
   },
   ctaTitle: {
-    fontSize: '2.5rem',
+    fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
     fontWeight: '700',
     marginBottom: '1rem',
+    lineHeight: 1.2,
   },
   ctaText: {
-    fontSize: '1.25rem',
+    fontSize: 'clamp(1rem, 3vw, 1.25rem)',
     marginBottom: '2rem',
     opacity: 0.9,
+    lineHeight: 1.5,
   },
   ctaButtons: {
     display: 'flex',
     gap: '1rem',
     justifyContent: 'center',
     flexWrap: 'wrap' as const,
+    flexDirection: 'column' as const,
+    alignItems: 'stretch',
+    maxWidth: '400px',
+    margin: '0 auto',
   },
   ctaPrimaryButton: {
     backgroundColor: '#2563eb',
@@ -531,6 +552,8 @@ const styles = {
     fontSize: '1.125rem',
     fontWeight: '600',
     cursor: 'pointer',
+    minHeight: '48px',
+    width: '100%',
   },
   ctaSecondaryButton: {
     backgroundColor: 'transparent',
@@ -541,6 +564,8 @@ const styles = {
     fontSize: '1.125rem',
     fontWeight: '600',
     cursor: 'pointer',
+    minHeight: '48px',
+    width: '100%',
   },
   faqList: {
     maxWidth: '800px',
