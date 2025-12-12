@@ -5,6 +5,7 @@ import helmet from 'helmet'
 import comparisonRoutes from './routes/comparison.routes.js'
 import providerRoutes from './routes/provider.routes.js'
 import prescriptionRoutes from './routes/prescription.routes.js'
+import pricingRoutes from './routes/pricing.routes.js'
 import { configureHealthcareGovApi } from './config/healthcareGov.config.js'
 
 const app = express()
@@ -37,6 +38,7 @@ app.get('/', (_req, res) => {
       comparison: '/api/comparison',
       providers: '/api/providers',
       prescriptions: '/api/prescriptions',
+      pricing: '/api/pricing',
     },
   })
 })
@@ -45,6 +47,7 @@ app.get('/', (_req, res) => {
 app.use('/api/comparison', comparisonRoutes)
 app.use('/api/providers', providerRoutes)
 app.use('/api/prescriptions', prescriptionRoutes)
+app.use('/api/pricing', pricingRoutes)
 
 // Start server
 app.listen(PORT, () => {
