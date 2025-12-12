@@ -1,9 +1,26 @@
-import { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@prisma/client'
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-const prisma = new PrismaClient()
+// Lazy initialization of Prisma to handle environments where it's not available
+let prisma: PrismaClient | null = null
+let prismaInitialized = false
+
+async function getPrisma(): Promise<PrismaClient | null> {
+  if (prismaInitialized) return prisma
+  prismaInitialized = true
+
+  try {
+    const { PrismaClient } = await import('@prisma/client')
+    prisma = new PrismaClient()
+    console.log('Prisma client initialized for prescription pricing')
+    return prisma
+  } catch (error) {
+    console.log('Prisma client not available, using static/file data for prescriptions')
+    return null
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -159,14 +176,22 @@ export class PrescriptionPricingService {
     const walmartPricing = await this.searchWalmartProgram(genericName || medicationName)
 
     // Check database for cached pricing
-    const cachedPrice = await prisma.prescriptionPrice.findFirst({
-      where: {
-        OR: [{ drugName: { contains: medicationName, mode: 'insensitive' } }, { genericName: genericName }],
-      },
-      orderBy: {
-        cachedAt: 'desc',
-      },
-    })
+    const db = await getPrisma()
+    let cachedPrice = null
+    if (db) {
+      try {
+        cachedPrice = await db.prescriptionPrice.findFirst({
+          where: {
+            OR: [{ drugName: { contains: medicationName, mode: 'insensitive' } }, { genericName: genericName }],
+          },
+          orderBy: {
+            cachedAt: 'desc',
+          },
+        })
+      } catch (error) {
+        console.log('Database query failed, using estimates')
+      }
+    }
 
     const pricing: MedicationPricing = {
       medicationName,
@@ -298,6 +323,11 @@ export class PrescriptionPricingService {
    * Import Walmart program to database
    */
   async importWalmartProgramToDatabase(): Promise<void> {
+    const db = await getPrisma()
+    if (!db) {
+      throw new Error('Database not available')
+    }
+
     if (!this.walmartProgramData) {
       await this.loadWalmartProgram()
     }
@@ -314,7 +344,7 @@ export class PrescriptionPricingService {
     console.log('Importing Walmart $4 program to database...')
 
     // Create the program
-    const program = await prisma.pharmacySavingsProgram.upsert({
+    const program = await db.pharmacySavingsProgram.upsert({
       where: { id: 'walmart-4-dollar' },
       create: {
         id: walmart.id,
@@ -332,12 +362,12 @@ export class PrescriptionPricingService {
       },
     })
 
-    console.log(`✅ Created/updated program: ${program.programName}`)
+    console.log(`Created/updated program: ${program.programName}`)
 
     // Import medications
     let importedCount = 0
     for (const med of walmart.medications) {
-      await prisma.pharmacySavingsMedication.upsert({
+      await db.pharmacySavingsMedication.upsert({
         where: {
           id: `walmart-4-${med.name.toLowerCase().replace(/\s+/g, '-')}`,
         },
@@ -359,30 +389,75 @@ export class PrescriptionPricingService {
       importedCount++
     }
 
-    console.log(`✅ Imported ${importedCount} medications to database`)
+    console.log(`Imported ${importedCount} medications to database`)
   }
 
   /**
    * Search medications in database by name
    */
   async searchMedications(searchTerm: string): Promise<MedicationPricing[]> {
-    const medications = await prisma.pharmacySavingsMedication.findMany({
-      where: {
-        OR: [
-          { drugName: { contains: searchTerm, mode: 'insensitive' } },
-          { genericName: { contains: searchTerm, mode: 'insensitive' } },
-        ],
-      },
-      include: {
-        program: true,
-      },
-      take: 10,
-    })
+    // Try database first
+    const db = await getPrisma()
+    if (db) {
+      try {
+        const medications = await db.pharmacySavingsMedication.findMany({
+          where: {
+            OR: [
+              { drugName: { contains: searchTerm, mode: 'insensitive' } },
+              { genericName: { contains: searchTerm, mode: 'insensitive' } },
+            ],
+          },
+          include: {
+            program: true,
+          },
+          take: 10,
+        })
 
-    return medications.map((med) => ({
-      medicationName: med.drugName,
+        if (medications.length > 0) {
+          return medications.map((med) => ({
+            medicationName: med.drugName,
+            genericName: med.genericName,
+            strength: med.dosage || undefined,
+            form: med.form || undefined,
+            pricing: {
+              walmart4Dollar: {
+                price30Day: med.price30Day,
+                price90Day: med.price90Day,
+                available: true,
+              },
+            },
+          }))
+        }
+      } catch (error) {
+        console.log('Database search failed, falling back to file data')
+      }
+    }
+
+    // Fall back to searching Walmart program JSON data
+    if (!this.walmartProgramData) {
+      await this.loadWalmartProgram()
+    }
+
+    if (!this.walmartProgramData) {
+      return []
+    }
+
+    const walmart = this.walmartProgramData.programs.find((p) => p.id === 'walmart-4-dollar')
+    if (!walmart) {
+      return []
+    }
+
+    const normalizedSearch = searchTerm.toLowerCase().trim()
+    const matches = walmart.medications.filter(
+      (med) =>
+        med.name.toLowerCase().includes(normalizedSearch) ||
+        med.genericName.toLowerCase().includes(normalizedSearch)
+    )
+
+    return matches.slice(0, 10).map((med) => ({
+      medicationName: med.name,
       genericName: med.genericName,
-      strength: med.dosage || undefined,
+      strength: med.strength || undefined,
       form: med.form || undefined,
       pricing: {
         walmart4Dollar: {

@@ -1,6 +1,23 @@
-import { PrismaClient, LabProvider } from '@prisma/client'
+import type { PrismaClient, LabProvider } from '@prisma/client'
 
-const prisma = new PrismaClient()
+// Lazy initialization of Prisma to handle environments where it's not available
+let prisma: PrismaClient | null = null
+let prismaInitialized = false
+
+async function getPrisma(): Promise<PrismaClient | null> {
+  if (prismaInitialized) return prisma
+  prismaInitialized = true
+
+  try {
+    const { PrismaClient } = await import('@prisma/client')
+    prisma = new PrismaClient()
+    console.log('Prisma client initialized for lab test pricing')
+    return prisma
+  } catch (error) {
+    console.log('Prisma client not available, using static data for lab tests')
+    return null
+  }
+}
 
 export interface LabTestPricing {
   testName: string
@@ -138,18 +155,21 @@ export class LabTestPricingService {
    */
   async getCommonLabTests(): Promise<string[]> {
     // First try to get from database
-    try {
-      const tests = await prisma.labTestPrice.findMany({
-        select: { testName: true },
-        distinct: ['testName'],
-        take: 20,
-      })
+    const db = await getPrisma()
+    if (db) {
+      try {
+        const tests = await db.labTestPrice.findMany({
+          select: { testName: true },
+          distinct: ['testName'],
+          take: 20,
+        })
 
-      if (tests.length > 0) {
-        return tests.map((t) => t.testName)
+        if (tests.length > 0) {
+          return tests.map((t) => t.testName)
+        }
+      } catch (error) {
+        console.log('Database not available, using static list')
       }
-    } catch (error) {
-      console.log('Database not available, using static list')
     }
 
     // Fall back to static list
@@ -163,21 +183,24 @@ export class LabTestPricingService {
     const searchTerm = testName.toLowerCase().trim()
 
     // Try database first
-    try {
-      const dbTests = await prisma.labTestPrice.findMany({
-        where: {
-          testName: { contains: testName, mode: 'insensitive' },
-        },
-        take: 10,
-      })
+    const db = await getPrisma()
+    if (db) {
+      try {
+        const dbTests = await db.labTestPrice.findMany({
+          where: {
+            testName: { contains: testName, mode: 'insensitive' },
+          },
+          take: 10,
+        })
 
-      if (dbTests.length > 0) {
-        // Group by test name and aggregate prices
-        const grouped = this.groupLabTestsByName(dbTests)
-        return grouped
+        if (dbTests.length > 0) {
+          // Group by test name and aggregate prices
+          const grouped = this.groupLabTestsByName(dbTests)
+          return grouped
+        }
+      } catch (error) {
+        console.log('Database not available, using static data')
       }
-    } catch (error) {
-      console.log('Database not available, using static data')
     }
 
     // Fall back to static data
@@ -197,18 +220,21 @@ export class LabTestPricingService {
     const searchTerm = testName.toLowerCase().trim()
 
     // Try database first
-    try {
-      const dbTests = await prisma.labTestPrice.findMany({
-        where: {
-          testName: { contains: testName, mode: 'insensitive' },
-        },
-      })
+    const db = await getPrisma()
+    if (db) {
+      try {
+        const dbTests = await db.labTestPrice.findMany({
+          where: {
+            testName: { contains: testName, mode: 'insensitive' },
+          },
+        })
 
-      if (dbTests.length > 0) {
-        return this.formatDbLabTestComparison(testName, dbTests)
+        if (dbTests.length > 0) {
+          return this.formatDbLabTestComparison(testName, dbTests)
+        }
+      } catch (error) {
+        console.log('Database not available, using static data')
       }
-    } catch (error) {
-      console.log('Database not available, using static data')
     }
 
     // Fall back to static data
@@ -376,13 +402,19 @@ export class LabTestPricingService {
    * Seed common lab tests to database
    */
   async seedLabTests(): Promise<void> {
+    const db = await getPrisma()
+    if (!db) {
+      console.log('Database not available, cannot seed lab tests')
+      return
+    }
+
     console.log('Seeding lab test prices to database...')
 
     for (const test of COMMON_LAB_TESTS) {
       for (const provider of test.providers) {
         const labProvider = this.mapProviderToEnum(provider.provider)
 
-        await prisma.labTestPrice.upsert({
+        await db.labTestPrice.upsert({
           where: {
             id: `${test.cptCode}-${labProvider}`,
           },
@@ -394,7 +426,7 @@ export class LabTestPricingService {
             cashPrice: provider.withoutInsurance,
             dpcPrice: provider.provider === 'DPC Affiliate' ? provider.withoutInsurance : null,
             insuranceEstimate: provider.withInsurance ?? null,
-            labProvider,
+            labProvider: labProvider as LabProvider,
             verified: true,
           },
           update: {
@@ -413,8 +445,8 @@ export class LabTestPricingService {
   /**
    * Map provider string to LabProvider enum
    */
-  private mapProviderToEnum(provider: string): LabProvider {
-    const map: Record<string, LabProvider> = {
+  private mapProviderToEnum(provider: string): string {
+    const map: Record<string, string> = {
       LabCorp: 'LABCORP',
       'Quest Diagnostics': 'QUEST',
       'Any Lab Test Now': 'ANYLABTESTNOW',
