@@ -3,7 +3,7 @@
  * Database queries for DPC provider data
  */
 
-import { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@prisma/client'
 import {
   calculateHaversineDistance,
   estimateCoordinatesFromZip,
@@ -12,7 +12,24 @@ import {
   type Coordinates,
 } from '../utils/geoDistance'
 
-const prisma = new PrismaClient()
+// Lazy initialization of Prisma to handle environments where it's not available
+let prisma: PrismaClient | null = null
+let prismaInitialized = false
+
+async function getPrisma(): Promise<PrismaClient | null> {
+  if (prismaInitialized) return prisma
+  prismaInitialized = true
+
+  try {
+    const { PrismaClient } = await import('@prisma/client')
+    prisma = new PrismaClient()
+    console.log('Prisma client initialized for DPC provider repository')
+    return prisma
+  } catch (error) {
+    console.log('Prisma client not available, provider queries will return empty results')
+    return null
+  }
+}
 
 export interface ProviderSearchParams {
   zipCode: string
@@ -121,10 +138,16 @@ export async function searchProvidersNearby(
   }
 
   // Log the complete where clause
-  console.log('🔎 Database query whereClause:', JSON.stringify(whereClause, null, 2))
+  console.log('Database query whereClause:', JSON.stringify(whereClause, null, 2))
 
   // Fetch providers from database
-  const providers = await prisma.dPCProvider.findMany({
+  const db = await getPrisma()
+  if (!db) {
+    console.log('Database not available, returning empty provider list')
+    return []
+  }
+
+  const providers = await db.dPCProvider.findMany({
     where: whereClause,
     select: {
       id: true,
@@ -189,7 +212,12 @@ export async function searchProvidersNearby(
  * Get a specific provider by ID
  */
 export async function getProviderById(providerId: string): Promise<ProviderWithDistance | null> {
-  const provider = await prisma.dPCProvider.findUnique({
+  const db = await getPrisma()
+  if (!db) {
+    return null
+  }
+
+  const provider = await db.dPCProvider.findUnique({
     where: { id: providerId },
     select: {
       id: true,
@@ -231,7 +259,12 @@ export async function getProviderById(providerId: string): Promise<ProviderWithD
  * Get providers by state
  */
 export async function getProvidersByState(state: string, limit: number = 50) {
-  return await prisma.dPCProvider.findMany({
+  const db = await getPrisma()
+  if (!db) {
+    return []
+  }
+
+  return await db.dPCProvider.findMany({
     where: {
       state: state.toUpperCase(),
       acceptingPatients: true,
@@ -296,5 +329,7 @@ function estimateDistanceFromZipCode(zipCode1: string, zipCode2: string): number
  * Close Prisma connection (for graceful shutdown)
  */
 export async function closeConnection() {
-  await prisma.$disconnect()
+  if (prisma) {
+    await prisma.$disconnect()
+  }
 }

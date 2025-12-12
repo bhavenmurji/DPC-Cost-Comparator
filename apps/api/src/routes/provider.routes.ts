@@ -1,9 +1,26 @@
 import { Router } from 'express'
-import { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@prisma/client'
 import { z } from 'zod'
 
 const router = Router()
-const prisma = new PrismaClient()
+
+// Lazy initialization of Prisma
+let prisma: PrismaClient | null = null
+let prismaInitialized = false
+
+async function getPrisma(): Promise<PrismaClient | null> {
+  if (prismaInitialized) return prisma
+  prismaInitialized = true
+
+  try {
+    const { PrismaClient } = await import('@prisma/client')
+    prisma = new PrismaClient()
+    return prisma
+  } catch (error) {
+    console.log('Prisma client not available for provider routes')
+    return null
+  }
+}
 
 // Validation schemas
 const providerSearchSchema = z.object({
@@ -78,9 +95,21 @@ router.get('/search', async (req, res) => {
 
     let providers
 
+    const db = await getPrisma()
+    if (!db) {
+      return res.json({
+        success: true,
+        count: 0,
+        searchParams: params,
+        coordinates,
+        providers: [],
+        message: 'Database not available',
+      })
+    }
+
     if (coordinates) {
       // Search within radius
-      const allProviders = await prisma.dPCProvider.findMany({
+      const allProviders = await db.dPCProvider.findMany({
         include: {
           providerSource: true,
         },
@@ -102,7 +131,7 @@ router.get('/search', async (req, res) => {
         .slice(params.offset, params.offset + params.limit)
     } else {
       // No coordinates available, return all providers with pagination
-      providers = await prisma.dPCProvider.findMany({
+      providers = await db.dPCProvider.findMany({
         skip: params.offset,
         take: params.limit,
         include: {
@@ -174,7 +203,15 @@ router.get('/:id', async (req, res) => {
       id: req.params.id,
     })
 
-    const provider = await prisma.dPCProvider.findUnique({
+    const db = await getPrisma()
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database not available',
+      })
+    }
+
+    const provider = await db.dPCProvider.findUnique({
       where: { id: params.id },
       include: {
         providerSource: true,
@@ -244,12 +281,26 @@ router.get('/:id', async (req, res) => {
  */
 router.get('/stats/summary', async (req, res) => {
   try {
-    const totalProviders = await prisma.dPCProvider.count()
-    const acceptingPatients = await prisma.dPCProvider.count({
+    const db = await getPrisma()
+    if (!db) {
+      return res.json({
+        success: true,
+        stats: {
+          totalProviders: 0,
+          acceptingPatientsCount: 0,
+          averageMonthlyFee: 0,
+          providersByState: {},
+        },
+        message: 'Database not available',
+      })
+    }
+
+    const totalProviders = await db.dPCProvider.count()
+    const acceptingPatients = await db.dPCProvider.count({
       where: { acceptingPatients: true },
     })
 
-    const providersByState = await prisma.dPCProvider.groupBy({
+    const providersByState = await db.dPCProvider.groupBy({
       by: ['state'],
       _count: {
         id: true,
@@ -262,7 +313,7 @@ router.get('/stats/summary', async (req, res) => {
       take: 10,
     })
 
-    const averageFee = await prisma.dPCProvider.aggregate({
+    const averageFee = await db.dPCProvider.aggregate({
       _avg: {
         monthlyFee: true,
       },
