@@ -32,16 +32,23 @@ router.get('/prescriptions', async (req, res) => {
     const results = await prescriptionPricingService.searchMedications(params.medicationName)
 
     // Transform to match frontend PrescriptionPrice interface
-    const prices = results.map((med, index) => ({
-      id: `med-${index}`,
-      medicationName: med.medicationName,
-      dosage: med.strength || params.dosage || 'Standard',
-      quantity: params.quantity || 30,
-      pharmacy: med.pricing.walmart4Dollar ? 'walmart' : 'goodrx',
-      price: med.pricing.walmart4Dollar?.price30Day || med.pricing.estimated?.averagePrice || 40,
-      savingsProgram: med.pricing.walmart4Dollar ? 'Walmart $4 Program' : undefined,
-      lastUpdated: new Date(),
-    }))
+    const prices = results.flatMap((med, medIndex) =>
+      med.pharmacyPrices.map((pharmPrice, priceIndex) => ({
+        id: `med-${medIndex}-${priceIndex}`,
+        medicationName: med.medicationName,
+        genericName: med.genericName,
+        dosage: med.strength || params.dosage || 'Standard',
+        quantity: pharmPrice.supplyDays || params.quantity || 30,
+        pharmacy: pharmPrice.pharmacy.toLowerCase().replace(/\s+/g, '_'),
+        price: pharmPrice.price,
+        isFree: pharmPrice.isFree,
+        savingsProgram: pharmPrice.programName,
+        requiresMembership: pharmPrice.requiresMembership,
+        membershipCost: pharmPrice.membershipCost,
+        notes: pharmPrice.notes,
+        lastUpdated: new Date(),
+      }))
+    )
 
     res.json(prices)
   } catch (error) {
@@ -78,53 +85,34 @@ router.get('/prescriptions/compare', async (req, res) => {
 
     const pricing = await prescriptionPricingService.getMedicationPricing(params.medicationName)
 
-    // Build price comparison from different sources
-    const prices: { pharmacy: string; price: number; savingsProgram?: string }[] = []
-
-    // Add Walmart $4 price if available
-    if (pricing.pricing.walmart4Dollar?.available) {
-      prices.push({
-        pharmacy: 'Walmart',
-        price: pricing.pricing.walmart4Dollar.price30Day,
-        savingsProgram: '$4 Prescription Program',
-      })
-    }
-
-    // Add Costco price if available
-    if (pricing.pricing.costco) {
-      prices.push({
-        pharmacy: 'Costco',
-        price: pricing.pricing.costco.estimatedPrice,
-        savingsProgram: pricing.pricing.costco.requiresMembership ? 'Membership Required' : undefined,
-      })
-    }
-
-    // Add estimated prices for other pharmacies
-    if (pricing.pricing.estimated) {
-      const estimated = pricing.pricing.estimated
-      prices.push(
-        { pharmacy: 'CVS', price: estimated.highPrice * 0.95 },
-        { pharmacy: 'Walgreens', price: estimated.highPrice * 0.9 },
-        { pharmacy: 'GoodRx', price: estimated.lowPrice, savingsProgram: 'GoodRx Coupon' }
-      )
-    }
-
-    // Sort by price ascending
-    prices.sort((a, b) => a.price - b.price)
+    // Build price comparison from all pharmacies
+    const prices = pricing.pharmacyPrices.map((p) => ({
+      pharmacy: p.pharmacy,
+      price: p.price,
+      supplyDays: p.supplyDays,
+      isFree: p.isFree,
+      savingsProgram: p.programName,
+      requiresMembership: p.requiresMembership,
+      membershipCost: p.membershipCost,
+      notes: p.notes,
+    }))
 
     // Calculate statistics
     const allPrices = prices.map((p) => p.price)
-    const lowestPrice = Math.min(...allPrices)
-    const averagePrice = allPrices.reduce((sum, p) => sum + p, 0) / allPrices.length
+    const lowestPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0
+    const averagePrice = allPrices.length > 0 ? allPrices.reduce((sum, p) => sum + p, 0) / allPrices.length : 0
 
     const comparison = {
       medication: pricing.medicationName,
+      genericName: pricing.genericName,
       dosage: pricing.strength || 'Standard',
-      quantity: 30,
+      category: pricing.category,
+      conditions: pricing.conditions,
       prices,
       lowestPrice,
       averagePrice,
       potentialSavings: averagePrice - lowestPrice,
+      isFreeAnywhere: prices.some((p) => p.isFree),
     }
 
     res.json(comparison)
@@ -145,40 +133,63 @@ router.get('/prescriptions/compare', async (req, res) => {
 })
 
 /**
+ * POST /api/pricing/prescriptions/calculate
+ * Calculate total costs for multiple medications
+ */
+router.post('/prescriptions/calculate', async (req, res) => {
+  try {
+    const schema = z.object({
+      medications: z.array(z.string()).min(1),
+    })
+
+    const params = schema.parse(req.body)
+    const summary = await prescriptionPricingService.calculatePrescriptionCosts(params.medications)
+
+    res.json(summary)
+  } catch (error) {
+    console.error('Error calculating prescription costs:', error)
+
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: 'Invalid request parameters',
+        details: error.errors,
+      })
+    }
+
+    res.status(500).json({
+      error: 'Failed to calculate prescription costs',
+    })
+  }
+})
+
+/**
  * GET /api/pricing/prescriptions/common
- * Get list of common prescriptions for autocomplete
+ * Get list of common prescriptions with pricing info
  */
 router.get('/prescriptions/common', async (_req, res) => {
   try {
-    // Common medications that are typically in discount programs
-    const commonMedications = [
-      'Metformin',
-      'Lisinopril',
-      'Atorvastatin',
-      'Amlodipine',
-      'Metoprolol',
-      'Omeprazole',
-      'Losartan',
-      'Gabapentin',
-      'Hydrochlorothiazide',
-      'Sertraline',
-      'Simvastatin',
-      'Montelukast',
-      'Escitalopram',
-      'Levothyroxine',
-      'Furosemide',
-      'Pantoprazole',
-      'Prednisone',
-      'Fluticasone',
-      'Amoxicillin',
-      'Azithromycin',
-    ]
-
+    const commonMedications = await prescriptionPricingService.getCommonMedications()
     res.json(commonMedications)
   } catch (error) {
     console.error('Error fetching common prescriptions:', error)
     res.status(500).json({
       error: 'Failed to fetch common prescriptions',
+    })
+  }
+})
+
+/**
+ * GET /api/pricing/programs
+ * Get all available pharmacy discount programs
+ */
+router.get('/programs', async (_req, res) => {
+  try {
+    const programs = await prescriptionPricingService.getAvailablePrograms()
+    res.json(programs)
+  } catch (error) {
+    console.error('Error fetching pharmacy programs:', error)
+    res.status(500).json({
+      error: 'Failed to fetch pharmacy programs',
     })
   }
 })
