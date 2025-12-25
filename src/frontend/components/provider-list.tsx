@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { DPCProvider } from '@/types';
 import { formatCurrency } from '@/lib/utils';
-import { MapPin, Phone, Globe, Users, CheckCircle, XCircle } from 'lucide-react';
+import { MapPin, Phone, Globe, CheckCircle, XCircle } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MinimalErrorFallback } from './ErrorFallback';
 
@@ -29,27 +29,27 @@ function ProviderListContent({ providers }: ProviderListProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">
+      <h3 className="text-lg font-semibold text-foreground">
         DPC Providers Near You ({providers.length})
       </h3>
       {providers.map((provider) => (
-        <Card key={provider.id} className="hover:shadow-lg transition-shadow">
+        <Card key={provider.id} className="hover:border-primary/50 transition-colors">
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-xl">{provider.name}</CardTitle>
+                <CardTitle className="text-xl text-foreground">{provider.name}</CardTitle>
                 <CardDescription className="flex items-center gap-1 mt-1">
                   <MapPin className="h-4 w-4" />
                   {provider.address}, {provider.city}, {provider.state} {provider.zipCode}
                   {provider.distance && (
-                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                    <span className="ml-2 text-xs bg-accent/20 text-accent-foreground px-2 py-0.5 rounded">
                       {provider.distance.toFixed(1)} miles away
                     </span>
                   )}
                 </CardDescription>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-primary">
                   {formatCurrency(provider.monthlyFee)}
                   <span className="text-sm text-muted-foreground">/mo</span>
                 </p>
@@ -66,20 +66,20 @@ function ProviderListContent({ providers }: ProviderListProps) {
               <div className="flex items-center gap-2">
                 {provider.acceptingPatients ? (
                   <>
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span className="text-sm text-green-600 font-medium">Accepting Patients</span>
+                    <CheckCircle className="h-5 w-5 text-chart-5" />
+                    <span className="text-sm text-chart-5 font-medium">Accepting Patients</span>
                   </>
                 ) : (
                   <>
-                    <XCircle className="h-5 w-5 text-red-600" />
-                    <span className="text-sm text-red-600 font-medium">Not Accepting</span>
+                    <XCircle className="h-5 w-5 text-destructive" />
+                    <span className="text-sm text-destructive font-medium">Not Accepting</span>
                   </>
                 )}
               </div>
               {provider.rating && (
                 <div className="flex items-center gap-1">
-                  <span className="text-yellow-500">★</span>
-                  <span className="text-sm font-medium">{provider.rating.toFixed(1)}</span>
+                  <span className="text-chart-2">★</span>
+                  <span className="text-sm font-medium text-foreground">{provider.rating.toFixed(1)}</span>
                   {provider.reviewCount && (
                     <span className="text-xs text-muted-foreground">
                       ({provider.reviewCount} reviews)
@@ -90,12 +90,12 @@ function ProviderListContent({ providers }: ProviderListProps) {
             </div>
 
             <div>
-              <p className="text-sm font-medium mb-2">Services Included:</p>
+              <p className="text-sm font-medium mb-2 text-foreground">Services Included:</p>
               <div className="flex flex-wrap gap-2">
                 {provider.servicesIncluded.map((service, idx) => (
                   <span
                     key={idx}
-                    className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded"
+                    className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded"
                   >
                     {service}
                   </span>

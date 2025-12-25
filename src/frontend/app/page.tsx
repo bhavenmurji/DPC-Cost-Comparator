@@ -92,7 +92,7 @@ export default function Home() {
           <UsageForm usage={usage} onChange={setUsage} />
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+            <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
@@ -125,12 +125,12 @@ export default function Home() {
               <ComparisonDashboard comparison={results.comparison} />
 
               {results.recommendations && results.recommendations.length > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <div className="bg-accent/10 border border-accent/30 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-3">Recommendations</h3>
                   <ul className="space-y-2">
                     {results.recommendations.map((rec, idx) => (
                       <li key={idx} className="flex items-start gap-2">
-                        <span className="text-blue-600 mt-1">•</span>
+                        <span className="text-accent mt-1">•</span>
                         <span className="text-sm">{rec}</span>
                       </li>
                     ))}
@@ -157,8 +157,8 @@ export default function Home() {
         </TabsContent>
       </Tabs>
 
-      <div className="bg-gray-50 border rounded-lg p-6 space-y-4">
-        <h3 className="text-lg font-semibold">What is Direct Primary Care (DPC)?</h3>
+      <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-foreground">What is Direct Primary Care (DPC)?</h3>
         <p className="text-sm text-muted-foreground">
           Direct Primary Care is a healthcare model where patients pay a monthly or annual fee
           directly to a primary care physician. This membership covers all primary care services,
@@ -166,20 +166,20 @@ export default function Home() {
           insurance billing, DPC practices can spend more time with patients and often charge lower fees.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <div className="text-center p-4 bg-white rounded border">
-            <h4 className="font-semibold text-blue-600">Unlimited Visits</h4>
+          <div className="text-center p-4 bg-muted/30 rounded-lg border border-border">
+            <h4 className="font-semibold text-primary">Unlimited Visits</h4>
             <p className="text-sm text-muted-foreground mt-1">
               See your doctor as often as needed
             </p>
           </div>
-          <div className="text-center p-4 bg-white rounded border">
-            <h4 className="font-semibold text-blue-600">Lower Costs</h4>
+          <div className="text-center p-4 bg-muted/30 rounded-lg border border-border">
+            <h4 className="font-semibold text-primary">Lower Costs</h4>
             <p className="text-sm text-muted-foreground mt-1">
               Often cheaper than traditional insurance
             </p>
           </div>
-          <div className="text-center p-4 bg-white rounded border">
-            <h4 className="font-semibold text-blue-600">More Time</h4>
+          <div className="text-center p-4 bg-muted/30 rounded-lg border border-border">
+            <h4 className="font-semibold text-primary">More Time</h4>
             <p className="text-sm text-muted-foreground mt-1">
               Longer appointments with your doctor
             </p>

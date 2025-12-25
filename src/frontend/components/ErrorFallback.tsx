@@ -187,11 +187,11 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
 /**
  * Minimal Error Fallback for small component boundaries
  */
-export function MinimalErrorFallback({ error, resetError }: ErrorFallbackProps) {
+export function MinimalErrorFallback({ error: _error, resetError }: ErrorFallbackProps) {
   return (
-    <div className="p-4 border border-red-300 rounded bg-red-50 text-center">
-      <AlertTriangle className="h-5 w-5 text-red-600 mx-auto mb-2" />
-      <p className="text-sm text-red-900 mb-2">Unable to load this section</p>
+    <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/10 text-center">
+      <AlertTriangle className="h-5 w-5 text-destructive mx-auto mb-2" />
+      <p className="text-sm text-foreground mb-2">Unable to load this section</p>
       <Button onClick={resetError} size="sm" variant="outline">
         <RefreshCw className="h-3 w-3 mr-1" />
         Retry

@@ -2,67 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Background Utilities */
+.bg-gradient-radial {
+  background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
+}
+
+/* IGNITE BRAND COLORS - DARK THEME */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --button-outline: rgba(22,100,147, .15);
+    --badge-outline: rgba(22,100,147, .10);
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Automatic computation of border around primary / danger buttons */
+    --opaque-button-border-intensity: 8; /* In terms of percentages */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* Backgrounds applied on top of other backgrounds when hovered/active */
+    --elevate-1: rgba(22,100,147, .08);
+    --elevate-2: rgba(22,100,147, .15);
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --background: 0 0% 0%; /* Pure black */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --foreground: 203 74% 85%; /* Electric blue tinted white */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --border: 207 57% 23%; /* Indigo dye */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --card: 205 85% 8%; /* Very dark prussian blue */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --card-foreground: 203 74% 85%; /* Electric blue tinted white */
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --popover: 205 85% 8%; /* Very dark prussian blue */
 
+    --popover-foreground: 203 74% 85%; /* Electric blue tinted white */
+
+    --primary: 15 85% 45%; /* Orange-red flame - IGNITE brand */
+
+    --primary-foreground: 0 0% 100%; /* Pure white */
+
+    --secondary: 207 57% 23%; /* Indigo dye */
+
+    --secondary-foreground: 203 74% 85%; /* Electric blue tinted white */
+
+    --muted: 205 85% 15%; /* Prussian blue */
+
+    --muted-foreground: 203 74% 65%; /* Dimmed electric blue */
+
+    --accent: 203 74% 33%; /* Lapis lazuli electric blue */
+
+    --accent-foreground: 0 0% 100%; /* Pure white */
+
+    --destructive: 0 75% 45%;
+
+    --destructive-foreground: 0 15% 98%;
+
+    --input: 207 57% 23%;
+    --ring: 203 74% 33%;
+
+    --chart-1: 15 85% 45%; /* Orange-red flame */
+    --chart-2: 35 80% 50%; /* Amber */
+    --chart-3: 10 90% 55%; /* Red-orange */
+    --chart-4: 20 75% 40%; /* Burnt orange */
+    --chart-5: 120 60% 40%; /* Green for positive values */
+
+    --font-sans: Inter, system-ui, sans-serif;
+    --font-serif: "Source Serif Pro", Georgia, serif;
+    --font-mono: "JetBrains Mono", "Fira Code", monospace;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    /* Same as root - always dark theme */
+    --button-outline: rgba(22,100,147, .15);
+    --badge-outline: rgba(22,100,147, .10);
+    --opaque-button-border-intensity: 8;
+    --elevate-1: rgba(22,100,147, .08);
+    --elevate-2: rgba(22,100,147, .15);
+    --background: 0 0% 0%;
+    --foreground: 203 74% 85%;
+    --border: 207 57% 23%;
+    --card: 205 85% 8%;
+    --card-foreground: 203 74% 85%;
+    --popover: 205 85% 8%;
+    --popover-foreground: 203 74% 85%;
+    --primary: 15 85% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 207 57% 23%;
+    --secondary-foreground: 203 74% 85%;
+    --muted: 205 85% 15%;
+    --muted-foreground: 203 74% 65%;
+    --accent: 203 74% 33%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 75% 45%;
+    --destructive-foreground: 0 15% 98%;
+    --input: 207 57% 23%;
+    --ring: 203 74% 33%;
   }
 }
 
@@ -71,6 +103,79 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Hover/Active elevation system for buttons and interactive elements */
+@layer utilities {
+  .hover-elevate:hover {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover {
+    background-color: var(--elevate-2);
+  }
+}
+
+/* CSS Animations - smooth, elegant reveals */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation utility classes */
+.animate-fade-in-up {
+  animation: fade-in-up 0.7s cubic-bezier(0.22, 0.03, 0.26, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-scale-up {
+  animation: scale-up 0.6s cubic-bezier(0.16, 0.1, 0.3, 1) forwards;
+}
+
+/* Stagger delays for children */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-scale-up,
+  .animate-fade-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }

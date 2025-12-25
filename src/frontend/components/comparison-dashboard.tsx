@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CostComparison } from '@/types';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
-import { ArrowDown, ArrowUp, TrendingDown, DollarSign } from 'lucide-react';
+import { ArrowUp, TrendingDown } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MinimalErrorFallback } from './ErrorFallback';
 
@@ -19,13 +19,13 @@ function ComparisonDashboardContent({ comparison }: ComparisonDashboardProps) {
   return (
     <div className="space-y-6">
       {/* Summary Card */}
-      <Card className={isSavings ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}>
+      <Card className={isSavings ? 'border-chart-5 bg-chart-5/10' : 'border-destructive bg-destructive/10'}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             {isSavings ? (
-              <TrendingDown className="h-6 w-6 text-green-600" />
+              <TrendingDown className="h-6 w-6 text-chart-5" />
             ) : (
-              <ArrowUp className="h-6 w-6 text-red-600" />
+              <ArrowUp className="h-6 w-6 text-destructive" />
             )}
             {isSavings ? 'Potential Savings with DPC' : 'Higher Cost with DPC'}
           </CardTitle>
@@ -37,7 +37,7 @@ function ComparisonDashboardContent({ comparison }: ComparisonDashboardProps) {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-center md:text-left">
               <p className="text-sm text-muted-foreground mb-1">Annual Savings</p>
-              <p className={`text-4xl font-bold ${isSavings ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`text-4xl font-bold ${isSavings ? 'text-chart-5' : 'text-destructive'}`}>
                 {isSavings ? '+' : '-'}{formatCurrency(Math.abs(savings))}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -47,11 +47,11 @@ function ComparisonDashboardContent({ comparison }: ComparisonDashboardProps) {
             <div className="flex gap-8">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-1">Current Plan</p>
-                <p className="text-2xl font-semibold">{formatCurrency(traditional.totalAnnualCost)}</p>
+                <p className="text-2xl font-semibold text-foreground">{formatCurrency(traditional.totalAnnualCost)}</p>
               </div>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-1">With DPC</p>
-                <p className="text-2xl font-semibold text-blue-600">
+                <p className="text-2xl font-semibold text-primary">
                   {formatCurrency(dpc.totalAnnualCost)}
                 </p>
               </div>
@@ -65,67 +65,67 @@ function ComparisonDashboardContent({ comparison }: ComparisonDashboardProps) {
         {/* Traditional Insurance Breakdown */}
         <Card>
           <CardHeader>
-            <CardTitle>Traditional Insurance</CardTitle>
+            <CardTitle className="text-foreground">Traditional Insurance</CardTitle>
             <CardDescription>Annual cost breakdown</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-sm">Monthly Premiums</span>
-              <span className="font-semibold">{formatCurrency(traditional.breakdown.premiums)}</span>
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-sm text-muted-foreground">Monthly Premiums</span>
+              <span className="font-semibold text-foreground">{formatCurrency(traditional.breakdown.premiums)}</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-sm">Out-of-Pocket Costs</span>
-              <span className="font-semibold">
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-sm text-muted-foreground">Out-of-Pocket Costs</span>
+              <span className="font-semibold text-foreground">
                 {formatCurrency(traditional.breakdown.outOfPocket)}
               </span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-sm">Prescriptions</span>
-              <span className="font-semibold">
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-sm text-muted-foreground">Prescriptions</span>
+              <span className="font-semibold text-foreground">
                 {formatCurrency(traditional.breakdown.prescriptions)}
               </span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-sm">Preventive Care</span>
-              <span className="font-semibold">
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-sm text-muted-foreground">Preventive Care</span>
+              <span className="font-semibold text-foreground">
                 {formatCurrency(traditional.breakdown.preventiveCare)}
               </span>
             </div>
-            <div className="flex justify-between items-center py-3 border-t-2 border-primary">
-              <span className="font-bold">Total Annual Cost</span>
-              <span className="text-xl font-bold">{formatCurrency(traditional.totalAnnualCost)}</span>
+            <div className="flex justify-between items-center py-3 border-t-2 border-muted">
+              <span className="font-bold text-foreground">Total Annual Cost</span>
+              <span className="text-xl font-bold text-foreground">{formatCurrency(traditional.totalAnnualCost)}</span>
             </div>
           </CardContent>
         </Card>
 
         {/* DPC Model Breakdown */}
-        <Card className="border-blue-500">
+        <Card className="border-primary">
           <CardHeader>
-            <CardTitle className="text-blue-600">Direct Primary Care Model</CardTitle>
+            <CardTitle className="text-primary">Direct Primary Care Model</CardTitle>
             <CardDescription>Annual cost breakdown</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-sm">DPC Membership</span>
-              <span className="font-semibold">{formatCurrency(dpc.breakdown.dpcMembership)}</span>
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-sm text-muted-foreground">DPC Membership</span>
+              <span className="font-semibold text-foreground">{formatCurrency(dpc.breakdown.dpcMembership)}</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-sm">Catastrophic Insurance</span>
-              <span className="font-semibold">
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-sm text-muted-foreground">Catastrophic Insurance</span>
+              <span className="font-semibold text-foreground">
                 {formatCurrency(dpc.breakdown.catastrophicInsurance)}
               </span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-sm">Out-of-Pocket Costs</span>
-              <span className="font-semibold">{formatCurrency(dpc.breakdown.outOfPocket)}</span>
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-sm text-muted-foreground">Out-of-Pocket Costs</span>
+              <span className="font-semibold text-foreground">{formatCurrency(dpc.breakdown.outOfPocket)}</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-sm">Prescriptions</span>
-              <span className="font-semibold">{formatCurrency(dpc.breakdown.prescriptions)}</span>
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-sm text-muted-foreground">Prescriptions</span>
+              <span className="font-semibold text-foreground">{formatCurrency(dpc.breakdown.prescriptions)}</span>
             </div>
-            <div className="flex justify-between items-center py-3 border-t-2 border-blue-500">
-              <span className="font-bold">Total Annual Cost</span>
-              <span className="text-xl font-bold text-blue-600">
+            <div className="flex justify-between items-center py-3 border-t-2 border-primary">
+              <span className="font-bold text-foreground">Total Annual Cost</span>
+              <span className="text-xl font-bold text-primary">
                 {formatCurrency(dpc.totalAnnualCost)}
               </span>
             </div>
