@@ -3,6 +3,12 @@
  *
  * Transforms Healthcare.gov API responses into our application's data models
  * and provides mapping between our ComparisonInput and API request formats.
+ *
+ * FIPS Lookup Strategy:
+ * 1. Check in-memory cache (populated by Census Bureau lookups)
+ * 2. Check hardcoded fallback mappings
+ * 3. Fall back to state's most populous county (for synchronous calls)
+ * 4. For async calls, query Census Bureau Geocoding API
  */
 
 import {
@@ -15,12 +21,24 @@ import {
   HealthcareGovHousehold,
   HealthcareGovPlace,
 } from '../types/healthcareGov.types'
+import {
+  getCensusBureauService,
+  lookupCountyFipsByZip,
+  FipsLookupResult,
+} from '../services/censusBureau.service'
 
 /**
- * County FIPS code lookup (expand as needed)
+ * Runtime FIPS cache - populated by Census Bureau API lookups
+ * This supplements the hardcoded fallbacks and persists during app lifetime
+ */
+const RUNTIME_FIPS_CACHE: Map<string, string> = new Map()
+
+/**
+ * County FIPS code fallback lookup
+ * Used when Census Bureau API is unavailable or rate-limited
  * Source: https://www.census.gov/library/reference/code-lists/ansi.html
  */
-const COUNTY_FIPS_BY_ZIP: Record<string, string> = {
+const COUNTY_FIPS_FALLBACK: Record<string, string> = {
   // North Carolina examples
   '27360': '37057', // Davidson County
   '27701': '37063', // Durham County
@@ -46,7 +64,8 @@ const COUNTY_FIPS_BY_ZIP: Record<string, string> = {
   '32801': '12095', // Orange County (Orlando)
   '33601': '12057', // Hillsborough County (Tampa)
 
-  // Add more as needed...
+  // Additional common ZIP codes
+  // (This serves as a fallback when Census API is unavailable)
 }
 
 /**
