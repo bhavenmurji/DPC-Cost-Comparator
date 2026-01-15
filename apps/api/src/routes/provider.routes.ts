@@ -193,7 +193,7 @@ router.get('/:id', async (req, res) => {
         phone: provider.phone,
         website: provider.website,
         monthlyFee: provider.monthlyFee,
-        servicesOffered: provider.servicesOffered,
+        servicesOffered: provider.servicesIncluded,
         rating: provider.rating,
         verified: provider.verified,
         location: {
