@@ -180,16 +180,19 @@ export function extractTraditionalCosts(
 
 /**
  * Extract catastrophic plan costs from Healthcare.gov plan data
+ * Returns CostBreakdown-compatible shape with additional catastrophic fields
  */
 export function extractCatastrophicCosts(
   plan: HealthcareGovPlan,
   dpcMonthlyFee: number
 ): {
-  catastrophicPremium: number
-  catastrophicDeductible: number
-  catastrophicOutOfPocket: number
-  dpcAnnualFee: number
+  premiums: number
+  deductible: number
+  copays: number
+  prescriptions: number
+  outOfPocket: number
   total: number
+  catastrophicPremium: number
 } {
   const monthlyPremium = plan.premium.premium_w_credit || plan.premium.premium
   const catastrophicPremium = monthlyPremium * 12
@@ -204,11 +207,15 @@ export function extractCatastrophicCosts(
   const total = catastrophicPremium + dpcAnnualFee + catastrophicOutOfPocket
 
   return {
-    catastrophicPremium,
-    catastrophicDeductible,
-    catastrophicOutOfPocket,
-    dpcAnnualFee,
+    // CostBreakdown fields
+    premiums: catastrophicPremium + dpcAnnualFee,
+    deductible: catastrophicDeductible,
+    copays: 0, // DPC covers primary care visits
+    prescriptions: 0, // Not included in this calculation
+    outOfPocket: catastrophicOutOfPocket,
     total,
+    // Additional catastrophic field
+    catastrophicPremium,
   }
 }
 
