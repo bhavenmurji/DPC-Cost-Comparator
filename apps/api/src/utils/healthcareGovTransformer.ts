@@ -272,15 +272,26 @@ function inferStateFromZip(zipCode: string): string {
 }
 
 /**
- * Infer county FIPS code from ZIP code
+ * Infer county FIPS code from ZIP code (synchronous)
+ *
+ * Uses layered lookup strategy:
+ * 1. Runtime cache (populated by Census Bureau API)
+ * 2. Hardcoded fallback mappings
+ * 3. State's most populous county as last resort
  */
 function inferCountyFipsFromZip(zipCode: string): string {
-  // Direct lookup
-  if (COUNTY_FIPS_BY_ZIP[zipCode]) {
-    return COUNTY_FIPS_BY_ZIP[zipCode]
+  // 1. Check runtime cache (populated by async Census lookups)
+  const cachedFips = RUNTIME_FIPS_CACHE.get(zipCode)
+  if (cachedFips) {
+    return cachedFips
   }
 
-  // Fallback to default by state (use most populous county)
+  // 2. Check hardcoded fallback
+  if (COUNTY_FIPS_FALLBACK[zipCode]) {
+    return COUNTY_FIPS_FALLBACK[zipCode]
+  }
+
+  // 3. Fallback to default by state (use most populous county)
   const state = inferStateFromZip(zipCode)
   const stateFipsDefaults: Record<string, string> = {
     'NC': '37063', // Durham County
@@ -288,6 +299,21 @@ function inferCountyFipsFromZip(zipCode: string): string {
     'NY': '36061', // New York County
     'TX': '48201', // Harris County
     'FL': '12086', // Miami-Dade County
+    'IL': '17031', // Cook County (Chicago)
+    'PA': '42101', // Philadelphia County
+    'OH': '39035', // Cuyahoga County (Cleveland)
+    'GA': '13121', // Fulton County (Atlanta)
+    'MI': '26163', // Wayne County (Detroit)
+    'AZ': '04013', // Maricopa County (Phoenix)
+    'WA': '53033', // King County (Seattle)
+    'MA': '25025', // Suffolk County (Boston)
+    'CO': '08031', // Denver County
+    'NV': '32003', // Clark County (Las Vegas)
+    'OR': '41051', // Multnomah County (Portland)
+    'MN': '27053', // Hennepin County (Minneapolis)
+    'VA': '51760', // Richmond city
+    'NJ': '34013', // Essex County (Newark)
+    'MD': '24510', // Baltimore city
   }
 
   return stateFipsDefaults[state] || '37063' // Default to Durham, NC
