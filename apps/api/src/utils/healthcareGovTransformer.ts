@@ -368,18 +368,42 @@ export function getPlanSummary(plan: HealthcareGovPlan): string {
 }
 
 /**
- * Lookup county FIPS by ZIP code
- * This would ideally use a complete database or external API
- * For now, returns a static lookup table
+ * Lookup county FIPS by ZIP code (async)
+ *
+ * Uses the US Census Bureau Geocoding API to resolve ZIP codes to County FIPS.
+ * Results are cached in RUNTIME_FIPS_CACHE for subsequent synchronous lookups.
+ *
+ * @param zipCode - 5-digit US ZIP code
+ * @returns 5-digit County FIPS code or null if not found
  */
 export async function lookupCountyFips(zipCode: string): Promise<string | null> {
-  // TODO: Implement actual county FIPS lookup via external API or database
-  // Options:
-  // 1. US Census Bureau Geocoding API
-  // 2. USPS ZIP Code Lookup API
-  // 3. Local database with ZIP to county mapping
+  // 1. Check runtime cache first
+  const cachedFips = RUNTIME_FIPS_CACHE.get(zipCode)
+  if (cachedFips) {
+    return cachedFips
+  }
 
-  return COUNTY_FIPS_BY_ZIP[zipCode] || null
+  // 2. Check hardcoded fallback
+  if (COUNTY_FIPS_FALLBACK[zipCode]) {
+    RUNTIME_FIPS_CACHE.set(zipCode, COUNTY_FIPS_FALLBACK[zipCode])
+    return COUNTY_FIPS_FALLBACK[zipCode]
+  }
+
+  // 3. Query Census Bureau API
+  try {
+    const fips = await lookupCountyFipsByZip(zipCode)
+    if (fips) {
+      // Cache for future synchronous lookups
+      RUNTIME_FIPS_CACHE.set(zipCode, fips)
+      return fips
+    }
+  } catch (error) {
+    console.warn(`[HealthcareGovTransformer] Census lookup failed for ZIP ${zipCode}:`, error)
+  }
+
+  // 4. Fall back to state default
+  const defaultFips = inferCountyFipsFromZip(zipCode)
+  return defaultFips
 }
 
 /**
