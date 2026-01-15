@@ -20,6 +20,8 @@ import {
   extractCatastrophicCosts,
   calculateDPCFee,
   validatePlanResponse,
+  ensureFipsLoaded,
+  getFipsCacheStats,
 } from '../utils/healthcareGovTransformer'
 import { HealthcareGovPlan } from '../types/healthcareGov.types'
 import {
