@@ -258,6 +258,7 @@ model PrescriptionPrice {
   id                String      @id @default(cuid())
 
   // Drug identification
+  ndc               String?     @unique // National Drug Code
   drugName          String      // Standardized drug name
   genericName       String?     // Generic equivalent
   dosage            String      // "10mg", "500mg", etc.
