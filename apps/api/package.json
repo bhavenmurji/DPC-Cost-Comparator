@@ -13,6 +13,12 @@
     "prisma:migrate": "prisma migrate dev",
     "scrape:dpc": "tsx ../../scripts/scrape-dpc-providers.ts",
     "scrape:dpc:test": "tsx ../../scripts/scrape-dpc-providers.ts --limit 10",
+    "scrape:dpca": "tsx ../../scripts/scrape-dpca-directory.ts",
+    "scrape:dpca:test": "tsx ../../scripts/scrape-dpca-directory.ts --limit 10",
+    "match:dpca": "tsx ../../scripts/match-dpca-providers.ts",
+    "match:dpca:report": "tsx ../../scripts/match-dpca-providers.ts --report",
+    "scrape:fees": "tsx ../../scripts/scrape-practice-fees.ts",
+    "scrape:fees:report": "tsx ../../scripts/scrape-practice-fees.ts --report",
     "import:walmart": "tsx ../../scripts/import-walmart-programs.ts",
     "enrich:providers": "tsx ../../scripts/enrich-providers-npi.ts",
     "enrich:providers:test": "tsx ../../scripts/enrich-providers-npi.ts --limit 10"
