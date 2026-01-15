@@ -321,9 +321,10 @@ export class GeocodingService {
   /**
    * Get cache statistics
    */
-  getCacheStats(): { size: number; dailyRequests: number } {
+  getCacheStats(): { size: number; reverseSize: number; dailyRequests: number } {
     return {
       size: geocodeCache.size,
+      reverseSize: reverseGeocodeCache.size,
       dailyRequests: dailyRequestCount,
     }
   }
@@ -361,6 +362,25 @@ export class GeocodingService {
 
   private setCache(zipCode: string, data: GeoCoordinates): void {
     geocodeCache.set(zipCode, {
+      data,
+      timestamp: Date.now(),
+    })
+  }
+
+  private getFromReverseCache(key: string): ReverseGeoResult | null {
+    const entry = reverseGeocodeCache.get(key)
+    if (!entry) return null
+
+    if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+      reverseGeocodeCache.delete(key)
+      return null
+    }
+
+    return { ...entry.data, cached: true }
+  }
+
+  private setReverseCache(key: string, data: ReverseGeoResult): void {
+    reverseGeocodeCache.set(key, {
       data,
       timestamp: Date.now(),
     })
