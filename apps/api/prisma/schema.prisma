@@ -462,6 +462,7 @@ enum PriceSource {
   WALGREENS
   MANUFACTURER
   MANUAL
+  NADAC
 }
 
 // Lab provider
