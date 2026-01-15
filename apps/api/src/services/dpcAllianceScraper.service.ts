@@ -449,7 +449,7 @@ export class DPCAllianceScraperService {
         where: { id: providerId },
         create: {
           id: providerId,
-          npi: `DPCA${profile.slug.substring(0, 6).toUpperCase()}`,
+          npi: `DPCA${profile.slug.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10).toUpperCase()}`,
           name: profile.name,
           practiceName: profile.name, // Use physician name as practice name for DPCA
           address: profile.address.street || profile.address.full || 'Address not available',
