@@ -1,9 +1,11 @@
 import { Router } from 'express'
 import { PrismaClient } from '@prisma/client'
 import { z } from 'zod'
+import { getGeocodingService } from '../services/geocoding.service'
 
 const router = Router()
 const prisma = new PrismaClient()
+const geocodingService = getGeocodingService()
 
 // Validation schemas
 const providerSearchSchema = z.object({
@@ -35,34 +37,17 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 /**
- * Simple geocoding approximation for ZIP codes
- * In production, use a real geocoding API
+ * Get coordinates for a ZIP code using the geocoding service
+ * Now supports all ~42,000 US ZIP codes via Zippopotam.us API
  */
 async function getZipCodeCoordinates(zipCode: string): Promise<{ lat: number; lng: number } | null> {
-  // This is a simplified version - in production, use a geocoding service
-  // For now, we'll use a basic lookup or return null to search all providers
-
-  // Common ZIP code coordinates (add more as needed)
-  const zipCodeMap: Record<string, { lat: number; lng: number }> = {
-    '10001': { lat: 40.7506, lng: -73.9971 }, // New York, NY
-    '90001': { lat: 33.9731, lng: -118.2479 }, // Los Angeles, CA
-    '90210': { lat: 34.0901, lng: -118.4065 }, // Beverly Hills, CA
-    '60601': { lat: 41.8859, lng: -87.6189 }, // Chicago, IL
-    '77001': { lat: 29.7504, lng: -95.3698 }, // Houston, TX
-    '85001': { lat: 33.4484, lng: -112.074 }, // Phoenix, AZ
-    '19101': { lat: 39.9526, lng: -75.1652 }, // Philadelphia, PA
-    '78201': { lat: 29.4241, lng: -98.4936 }, // San Antonio, TX
-    '92101': { lat: 32.7157, lng: -117.1611 }, // San Diego, CA
-    '75201': { lat: 32.7767, lng: -96.797 }, // Dallas, TX
-    '95101': { lat: 37.3382, lng: -121.8863 }, // San Jose, CA
-  }
-
-  return zipCodeMap[zipCode] || null
+  return geocodingService.getZipCodeCoordinates(zipCode)
 }
 
 /**
  * GET /api/providers/search
  * Search for DPC providers by location
+ * Now supports all ~42,000 US ZIP codes
  */
 router.get('/search', async (req, res) => {
   try {
@@ -73,8 +58,9 @@ router.get('/search', async (req, res) => {
       offset: req.query.offset ? Number(req.query.offset) : undefined,
     })
 
-    // Get coordinates for ZIP code
-    const coordinates = await getZipCodeCoordinates(params.zipCode)
+    // Get coordinates and location info for ZIP code
+    const geoResult = await geocodingService.getCoordinates(params.zipCode)
+    const coordinates = geoResult ? { lat: geoResult.latitude, lng: geoResult.longitude } : null
 
     let providers
 
@@ -118,7 +104,13 @@ router.get('/search', async (req, res) => {
       success: true,
       count: providers.length,
       searchParams: params,
-      coordinates,
+      searchLocation: geoResult ? {
+        zipCode: params.zipCode,
+        city: geoResult.city,
+        state: geoResult.stateAbbrev,
+        coordinates,
+        cached: geoResult.cached,
+      } : null,
       providers: providers.map((p) => ({
         id: p.id,
         name: p.name,

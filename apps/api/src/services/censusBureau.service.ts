@@ -161,58 +161,18 @@ export class CensusBureauService {
     }
 
     try {
-      // Use onelineaddress endpoint with just the ZIP code
-      // Adding a generic street helps geocoder accuracy
-      const response = await this.client.get<CensusGeocodingResponse>(
-        '/geographies/onelineaddress',
-        {
-          params: {
-            address: `${cleanZip}`,
-            benchmark: 'Public_AR_Current',  // Current public benchmark
-            vintage: 'Current_Current',       // Current vintage for geographies
-            layers: 'Counties',               // We only need county data
-            format: 'json',
-          },
-        }
-      )
+      // Use FCC Area API which uses actual ZIP centroids - more reliable than Census address geocoding
+      // The Census address geocoder can match wrong locations when generic addresses exist in multiple places
+      const result = await this.lookupViaFCC(cleanZip)
 
-      this.incrementRequestCount()
-
-      const matches = response.data?.result?.addressMatches
-      if (!matches || matches.length === 0) {
-        console.warn(`[CensusBureau] No address match for ZIP: ${cleanZip}`)
-        return null
+      if (result) {
+        // Cache the result for future lookups
+        this.setCache(cleanZip, result)
+        return result
       }
 
-      // Extract county geography from first match
-      const firstMatch = matches[0]
-      const counties = firstMatch.geographies?.Counties
-
-      if (!counties || counties.length === 0) {
-        console.warn(`[CensusBureau] No county data for ZIP: ${cleanZip}`)
-        return null
-      }
-
-      const county = counties[0]
-      const stateFips = county.STATE
-      const countyCode = county.COUNTY
-      const fullFips = `${stateFips}${countyCode}`
-
-      const result: FipsLookupResult = {
-        countyFips: fullFips,
-        stateFips: stateFips,
-        countyName: county.BASENAME || county.NAME,
-        stateName: firstMatch.addressComponents?.state || '',
-        stateAbbrev: STATE_FIPS_TO_ABBREV[stateFips] || '',
-        cached: false,
-      }
-
-      // Cache the result
-      this.setCache(cleanZip, result)
-
-      console.log(`[CensusBureau] Resolved ZIP ${cleanZip} → ${result.countyName}, ${result.stateAbbrev} (FIPS: ${fullFips})`)
-
-      return result
+      console.warn(`[CensusBureau] No match found for ZIP: ${cleanZip}`)
+      return null
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error(`[CensusBureau] API error for ZIP ${cleanZip}:`, {
@@ -300,6 +260,73 @@ export class CensusBureauService {
   clearCache(): void {
     fipsCache.clear()
     console.log('[CensusBureau] Cache cleared')
+  }
+
+  /**
+   * Fallback lookup using FCC Area API
+   * This uses ZIP code centroids to find county FIPS
+   * API: https://geo.fcc.gov/api/census/
+   */
+  private async lookupViaFCC(zipCode: string): Promise<FipsLookupResult | null> {
+    try {
+      // FCC API needs coordinates, so we first get ZIP centroid from a simple lookup
+      // Using Zippopotam.us free API for ZIP to lat/lng
+      const zipResponse = await axios.get<{
+        places?: Array<{
+          latitude: string
+          longitude: string
+          state: string
+          'state abbreviation': string
+          'place name': string
+        }>
+      }>(`https://api.zippopotam.us/us/${zipCode}`, { timeout: 5000 })
+
+      if (!zipResponse.data.places || zipResponse.data.places.length === 0) {
+        return null
+      }
+
+      const place = zipResponse.data.places[0]
+      const lat = parseFloat(place.latitude)
+      const lng = parseFloat(place.longitude)
+
+      // Now use FCC Area API to get county FIPS from coordinates
+      const fccResponse = await axios.get<{
+        results?: Array<{
+          county_fips: string
+          county_name: string
+          state_fips: string
+          state_code: string
+          state_name: string
+        }>
+      }>(`https://geo.fcc.gov/api/census/area`, {
+        params: {
+          lat,
+          lon: lng,
+          format: 'json',
+        },
+        timeout: 5000,
+      })
+
+      if (!fccResponse.data.results || fccResponse.data.results.length === 0) {
+        return null
+      }
+
+      const fccResult = fccResponse.data.results[0]
+      const result: FipsLookupResult = {
+        countyFips: fccResult.county_fips,
+        stateFips: fccResult.state_fips,
+        countyName: fccResult.county_name,
+        stateName: fccResult.state_name,
+        stateAbbrev: fccResult.state_code,
+        cached: false,
+      }
+
+      console.log(`[CensusBureau/FCC] Resolved ZIP ${zipCode} → ${result.countyName}, ${result.stateAbbrev} (FIPS: ${result.countyFips})`)
+      return result
+    } catch (error) {
+      // Silent fallback failure - we'll use state defaults
+      return null
+    }
   }
 
   // Private helper methods

@@ -1,44 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { analytics } from '../utils/analytics'
 import FeaturedProvidersSkeleton from '../components/FeaturedProvidersSkeleton'
-
-interface Provider {
-  id: string
-  name: string
-  city: string
-  state: string
-  monthlyFee: number
-  acceptingPatients: boolean
-  phone?: string
-  website?: string
-}
+import { useCityProviders } from '../hooks/useCityProviders'
 
 export default function LosAngelesDPC() {
   const navigate = useNavigate()
-  const [providers, setProviders] = useState<Provider[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use shared hook for data fetching - 90210 (Beverly Hills) as center of LA area
+  const { providers, stats, loading } = useCityProviders('90210', 50)
 
   useEffect(() => {
     analytics.trackPageView('/los-angeles-dpc')
-    fetchProviders()
   }, [])
-
-  const fetchProviders = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/providers/search?zipCode=90210&radius=50`
-      )
-      if (response.ok) {
-        const data = await response.json()
-        setProviders(data.slice(0, 5))
-      }
-    } catch (error) {
-      console.error('Error fetching providers:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSearchProviders = () => {
     navigate('/providers/search?zipCode=90210&state=CA')
@@ -57,8 +30,8 @@ export default function LosAngelesDPC() {
           Affordable, unlimited primary care for Angelenos
         </p>
         <p style={styles.heroDescription}>
-          Discover 5+ DPC providers in the Los Angeles area offering unlimited access to your
-          doctor for a simple monthly fee—no copays, no surprise bills.
+          Discover {stats.providerCount > 0 ? `${stats.providerCount}+` : 'local'} DPC providers in the Los Angeles area offering unlimited access to your
+          doctor for {stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '$100-175'}/month—no copays, no surprise bills.
         </p>
         <div style={styles.heroButtons}>
           <button type="button" onClick={handleSearchProviders} style={styles.primaryButton}>
@@ -74,15 +47,15 @@ export default function LosAngelesDPC() {
       <div style={styles.statsSection}>
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>5+</div>
+            <div style={styles.statNumber}>{stats.providerCount > 0 ? `${stats.providerCount}+` : '...'}</div>
             <div style={styles.statLabel}>DPC Providers</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>$100-149</div>
+            <div style={styles.statNumber}>{stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '...'}</div>
             <div style={styles.statLabel}>Avg Monthly Fee</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>$4,700+</div>
+            <div style={styles.statNumber}>{stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '...'}</div>
             <div style={styles.statLabel}>Annual Savings</div>
           </div>
           <div style={styles.statCard}>
@@ -100,7 +73,7 @@ export default function LosAngelesDPC() {
             <div style={styles.benefitIcon}>💰</div>
             <h3 style={styles.benefitTitle}>Save Thousands</h3>
             <p style={styles.benefitText}>
-              Average LA family saves $4,724/year compared to traditional insurance with high
+              Average LA family saves {stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '$4,000+'}/year compared to traditional insurance with high
               deductibles
             </p>
           </div>
@@ -187,14 +160,14 @@ export default function LosAngelesDPC() {
             <div style={styles.stepNumber}>1</div>
             <h3 style={styles.stepTitle}>Choose Your Provider</h3>
             <p style={styles.stepText}>
-              Browse 5+ DPC practices in LA. Compare monthly fees, services, and patient reviews
+              Browse {stats.providerCount > 0 ? `${stats.providerCount}+` : ''} DPC practices in LA. Compare monthly fees, services, and patient reviews
             </p>
           </div>
           <div style={styles.stepCard}>
             <div style={styles.stepNumber}>2</div>
             <h3 style={styles.stepTitle}>Pay Monthly Membership</h3>
             <p style={styles.stepText}>
-              Pay $100-200/month for unlimited primary care. No copays, no deductibles
+              Pay {stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '$100-175'}/month for unlimited primary care. No copays, no deductibles
             </p>
           </div>
           <div style={styles.stepCard}>
@@ -251,7 +224,7 @@ export default function LosAngelesDPC() {
           <div style={styles.faqItem}>
             <h3 style={styles.faqQuestion}>How much do LA residents save with DPC?</h3>
             <p style={styles.faqAnswer}>
-              Average LA families save $4,700+ annually compared to traditional insurance with
+              Average LA families save {stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '$4,000+'} annually compared to traditional insurance with
               high deductibles and copays. Singles save $2,000-3,000/year.
             </p>
           </div>

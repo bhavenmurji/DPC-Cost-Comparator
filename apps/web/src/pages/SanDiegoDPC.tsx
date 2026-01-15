@@ -1,44 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { analytics } from '../utils/analytics'
 import FeaturedProvidersSkeleton from '../components/FeaturedProvidersSkeleton'
-
-interface Provider {
-  id: string
-  name: string
-  city: string
-  state: string
-  monthlyFee: number
-  acceptingPatients: boolean
-  phone?: string
-  website?: string
-}
+import { useCityProviders } from '../hooks/useCityProviders'
 
 export default function SanDiegoDPC() {
   const navigate = useNavigate()
-  const [providers, setProviders] = useState<Provider[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use shared hook for data fetching - 92101 is downtown San Diego
+  const { providers, stats, loading } = useCityProviders('92101', 50)
 
   useEffect(() => {
     analytics.trackPageView('/san-diego-dpc')
-    fetchProviders()
   }, [])
-
-  const fetchProviders = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/providers/search?zipCode=92101&radius=50`
-      )
-      if (response.ok) {
-        const data = await response.json()
-        setProviders(data.slice(0, 5))
-      }
-    } catch (error) {
-      console.error('Error fetching providers:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSearchProviders = () => {
     navigate('/providers/search?zipCode=92101&state=CA')
@@ -57,8 +30,8 @@ export default function SanDiegoDPC() {
           Beach lifestyle meets affordable healthcare
         </p>
         <p style={styles.heroDescription}>
-          Discover 3+ DPC providers in San Diego offering unlimited primary care access for
-          $99-150/month. Lower costs than LA or SF with the same quality care.
+          Discover {stats.providerCount > 0 ? `${stats.providerCount}+` : 'local'} DPC providers in San Diego offering unlimited primary care access for
+          {stats.avgMonthlyFee > 0 ? ` $${stats.avgMonthlyFee}` : ' $99-150'}/month. Lower costs than LA or SF with the same quality care.
         </p>
         <div style={styles.heroButtons}>
           <button type="button" onClick={handleSearchProviders} style={styles.primaryButton}>
@@ -74,15 +47,15 @@ export default function SanDiegoDPC() {
       <div style={styles.statsSection}>
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>3+</div>
+            <div style={styles.statNumber}>{stats.providerCount > 0 ? `${stats.providerCount}+` : '...'}</div>
             <div style={styles.statLabel}>DPC Providers</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>$99-150</div>
+            <div style={styles.statNumber}>{stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '...'}</div>
             <div style={styles.statLabel}>Avg Monthly Fee</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>$4,500+</div>
+            <div style={styles.statNumber}>{stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '...'}</div>
             <div style={styles.statLabel}>Annual Savings</div>
           </div>
           <div style={styles.statCard}>
@@ -100,7 +73,7 @@ export default function SanDiegoDPC() {
             <div style={styles.benefitIcon}>💰</div>
             <h3 style={styles.benefitTitle}>Lower Than LA/SF Costs</h3>
             <p style={styles.benefitText}>
-              Save $4,500+/year compared to traditional insurance. San Diego DPC fees are more
+              Save {stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '$4,500+'}/year compared to traditional insurance. San Diego DPC fees are more
               affordable than other California metros
             </p>
           </div>
@@ -189,7 +162,7 @@ export default function SanDiegoDPC() {
             <div style={styles.stepNumber}>1</div>
             <h3 style={styles.stepTitle}>Choose Your Provider</h3>
             <p style={styles.stepText}>
-              Browse 3+ DPC practices in San Diego. Compare monthly fees, services, and
+              Browse {stats.providerCount > 0 ? `${stats.providerCount}+` : ''} DPC practices in San Diego. Compare monthly fees, services, and
               locations across the county
             </p>
           </div>
@@ -197,7 +170,7 @@ export default function SanDiegoDPC() {
             <div style={styles.stepNumber}>2</div>
             <h3 style={styles.stepTitle}>Pay Monthly Membership</h3>
             <p style={styles.stepText}>
-              Pay $99-150/month for unlimited primary care. No copays, no deductibles, no
+              Pay {stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '$99-150'}/month for unlimited primary care. No copays, no deductibles, no
               surprises
             </p>
           </div>
@@ -256,7 +229,7 @@ export default function SanDiegoDPC() {
           <div style={styles.faqItem}>
             <h3 style={styles.faqQuestion}>How much do San Diego residents save with DPC?</h3>
             <p style={styles.faqAnswer}>
-              Average San Diego families save $4,500+ annually compared to traditional insurance
+              Average San Diego families save {stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '$4,500+'} annually compared to traditional insurance
               with high deductibles and copays. Singles save $2,000-3,500/year.
             </p>
           </div>

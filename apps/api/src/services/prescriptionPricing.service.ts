@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { getNADACService, DrugPricing as NADACDrugPricing } from './nadac.service'
 
 const prisma = new PrismaClient()
 
@@ -13,7 +14,18 @@ export interface MedicationPricing {
   genericName: string
   strength?: string
   form?: string
+  ndc?: string
   pricing: {
+    nadac?: {
+      wholesalePerUnit: number
+      retail30Day: number
+      retail90Day: number
+      discountPharmacy30Day: number
+      discountPharmacy90Day: number
+      isGeneric: boolean
+      effectiveDate: string
+      source: 'NADAC'
+    }
     walmart4Dollar?: {
       price30Day: number
       price90Day: number | null
@@ -30,6 +42,11 @@ export interface MedicationPricing {
       averagePrice: number
       source: string
     }
+  }
+  bestPrice?: {
+    source: string
+    price30Day: number
+    price90Day: number
   }
   savingsVsInsurance?: number
   category?: string
@@ -149,61 +166,128 @@ export class PrescriptionPricingService {
 
   /**
    * Get pricing for a single medication
+   * Uses NADAC (CMS wholesale pricing) as primary source with Walmart $4 as a special case
    */
   async getMedicationPricing(
     medicationName: string,
     genericName?: string,
     strength?: string
   ): Promise<MedicationPricing> {
-    // Check Walmart $4 program first
-    const walmartPricing = await this.searchWalmartProgram(genericName || medicationName)
+    const searchTerm = genericName || medicationName
 
-    // Check database for cached pricing
-    const cachedPrice = await prisma.prescriptionPrice.findFirst({
-      where: {
-        OR: [{ drugName: { contains: medicationName, mode: 'insensitive' } }, { genericName: genericName }],
-      },
-      orderBy: {
-        cachedAt: 'desc',
-      },
-    })
+    // Check Walmart $4 program first (often the best deal for covered drugs)
+    const walmartPricing = await this.searchWalmartProgram(searchTerm)
+
+    // Query NADAC for real wholesale pricing
+    const nadacService = getNADACService()
+    let nadacPricing: NADACDrugPricing | null = null
+
+    try {
+      const nadacResult = await nadacService.searchDrugs(searchTerm, 5)
+      if (nadacResult.drugs.length > 0) {
+        // Find the best match (preferring generics and lowest price)
+        nadacPricing = nadacResult.drugs
+          .filter(d => d.isGeneric)
+          .sort((a, b) => a.nadacPerUnit - b.nadacPerUnit)[0]
+          || nadacResult.drugs[0]
+      }
+    } catch (error) {
+      console.warn('[PrescriptionPricing] NADAC lookup failed:', error)
+    }
 
     const pricing: MedicationPricing = {
       medicationName,
       genericName: genericName || medicationName,
       strength,
+      ndc: nadacPricing?.ndc,
       pricing: {},
     }
 
-    // Add Walmart pricing if available
+    // Add NADAC pricing if available
+    if (nadacPricing) {
+      // Calculate discount pharmacy prices (Costco, Walmart, etc.)
+      const discountPharmacy30 = nadacService.calculateRetailPrice(
+        nadacPricing.nadacPerUnit,
+        30,
+        nadacPricing.isGeneric,
+        'discount'
+      )
+      const discountPharmacy90 = nadacService.calculateRetailPrice(
+        nadacPricing.nadacPerUnit,
+        90,
+        nadacPricing.isGeneric,
+        'discount'
+      ) * 0.9 // 10% 90-day discount
+
+      pricing.pricing.nadac = {
+        wholesalePerUnit: nadacPricing.nadacPerUnit,
+        retail30Day: nadacPricing.estimated30DayRetail,
+        retail90Day: nadacPricing.estimated90DayRetail,
+        discountPharmacy30Day: discountPharmacy30,
+        discountPharmacy90Day: discountPharmacy90,
+        isGeneric: nadacPricing.isGeneric,
+        effectiveDate: nadacPricing.effectiveDate,
+        source: 'NADAC',
+      }
+
+      // Add Costco estimate based on NADAC
+      pricing.pricing.costco = {
+        estimatedPrice: discountPharmacy30,
+        requiresMembership: true,
+        membershipCost: 60,
+      }
+    }
+
+    // Add Walmart $4 pricing if available
     if (walmartPricing) {
       pricing.pricing.walmart4Dollar = walmartPricing
     }
 
-    // Add cached pricing if available
-    if (cachedPrice) {
-      if (cachedPrice.source === 'COSTCO') {
-        pricing.pricing.costco = {
-          estimatedPrice: cachedPrice.price,
-          requiresMembership: false,
-          membershipCost: 60,
-        }
-      } else {
-        pricing.pricing.estimated = {
-          lowPrice: cachedPrice.price * 0.8,
-          highPrice: cachedPrice.price * 1.2,
-          averagePrice: cachedPrice.price,
-          source: cachedPrice.source,
-        }
+    // Determine best price across all sources
+    const prices: { source: string; price30: number; price90: number }[] = []
+
+    if (walmartPricing?.available) {
+      prices.push({
+        source: 'Walmart $4 Program',
+        price30: walmartPricing.price30Day,
+        price90: walmartPricing.price90Day || walmartPricing.price30Day * 2.5,
+      })
+    }
+
+    if (pricing.pricing.nadac) {
+      prices.push({
+        source: 'NADAC (Discount Pharmacy)',
+        price30: pricing.pricing.nadac.discountPharmacy30Day,
+        price90: pricing.pricing.nadac.discountPharmacy90Day,
+      })
+    }
+
+    if (prices.length > 0) {
+      const best = prices.sort((a, b) => a.price30 - b.price30)[0]
+      pricing.bestPrice = {
+        source: best.source,
+        price30Day: best.price30,
+        price90Day: best.price90,
       }
     } else {
-      // Provide rough estimates based on typical pricing
+      // Fallback to estimates if no real data
       pricing.pricing.estimated = {
         lowPrice: 10,
         highPrice: 100,
         averagePrice: 40,
         source: 'ESTIMATE',
       }
+      pricing.bestPrice = {
+        source: 'Estimate',
+        price30Day: 40,
+        price90Day: 100,
+      }
+    }
+
+    // Calculate savings vs typical insurance copay ($20-30)
+    const typicalCopay = 25
+    if (pricing.bestPrice) {
+      pricing.savingsVsInsurance = (typicalCopay - pricing.bestPrice.price30Day) * 12
     }
 
     return pricing
@@ -211,83 +295,134 @@ export class PrescriptionPricingService {
 
   /**
    * Calculate total prescription costs for multiple medications
+   * Now uses NADAC pricing as primary source with intelligent recommendations
    */
   async calculatePrescriptionCosts(medications: string[]): Promise<PrescriptionCostSummary> {
     const pricingResults: MedicationPricing[] = []
     let walmartAvailableCount = 0
-    let walmartMonthlyCost = 0
-    let estimatedMonthlyCost = 0
+    let nadacAvailableCount = 0
+    let bestPriceMonthly = 0
+    let discountPharmacyMonthly = 0
+    let retailPharmacyMonthly = 0
 
     // Get pricing for each medication
     for (const medName of medications) {
       const pricing = await this.getMedicationPricing(medName)
       pricingResults.push(pricing)
 
-      // Calculate Walmart costs
+      // Track Walmart availability
       if (pricing.pricing.walmart4Dollar?.available) {
         walmartAvailableCount++
-        walmartMonthlyCost += pricing.pricing.walmart4Dollar.price30Day
-      } else if (pricing.pricing.estimated) {
-        estimatedMonthlyCost += pricing.pricing.estimated.averagePrice
+      }
+
+      // Track NADAC availability
+      if (pricing.pricing.nadac) {
+        nadacAvailableCount++
+        discountPharmacyMonthly += pricing.pricing.nadac.discountPharmacy30Day
+        retailPharmacyMonthly += pricing.pricing.nadac.retail30Day
+      }
+
+      // Use best price for totals
+      if (pricing.bestPrice) {
+        bestPriceMonthly += pricing.bestPrice.price30Day
       }
     }
 
-    // Calculate totals
-    const totalWalmartMonthly = walmartMonthlyCost + estimatedMonthlyCost
-    const totalWalmartAnnual = totalWalmartMonthly * 12
+    // Calculate totals using best available prices
+    const totalMonthly = bestPriceMonthly
+    const totalAnnual = totalMonthly * 12
 
-    // Estimate Costco costs (typically 10-20% cheaper than average)
-    const estimatedCostcoMonthly = estimatedMonthlyCost * 0.85
-    const estimatedCostcoAnnual = estimatedCostcoMonthly * 12
+    // Calculate Costco costs (discount pharmacy pricing)
     const costcoMembershipCost = 60
-    const costcoTotalAnnual = estimatedCostcoAnnual + costcoMembershipCost
+    const costcoMonthly = discountPharmacyMonthly
+    const costcoAnnual = costcoMonthly * 12
+    const costcoTotalAnnual = costcoAnnual + costcoMembershipCost
 
-    // Calculate savings vs typical insurance copays
-    const typicalInsuranceCopay = 20 // Average copay per medication
+    // Calculate savings vs typical insurance copays ($20-30 per prescription)
+    const typicalInsuranceCopay = 25
     const totalInsuranceMonthlyCost = medications.length * typicalInsuranceCopay
-    const savings = totalInsuranceMonthlyCost * 12 - totalWalmartAnnual
+    const savingsVsInsurance = (totalInsuranceMonthlyCost * 12) - totalAnnual
 
-    // Generate recommendations
+    // Calculate savings vs retail pharmacy
+    const retailAnnual = retailPharmacyMonthly * 12
+    const savingsVsRetail = retailAnnual - totalAnnual
+
+    // Generate smart recommendations
     const recommendations: string[] = []
 
+    // NADAC data quality
+    if (nadacAvailableCount === medications.length) {
+      recommendations.push(
+        `✓ Real pricing data found for all ${medications.length} medications from CMS NADAC database.`
+      )
+    } else if (nadacAvailableCount > 0) {
+      recommendations.push(
+        `Found real pricing for ${nadacAvailableCount} of ${medications.length} medications.`
+      )
+    }
+
+    // Walmart $4 program recommendation
     if (walmartAvailableCount === medications.length) {
       recommendations.push(
-        `All ${medications.length} medications are available in Walmart's $4 program! This could save you significantly.`
+        `🏆 All ${medications.length} medications qualify for Walmart's $4 program - best value!`
       )
     } else if (walmartAvailableCount > 0) {
+      const walmartTotal = pricingResults
+        .filter(p => p.pricing.walmart4Dollar?.available)
+        .reduce((sum, p) => sum + (p.pricing.walmart4Dollar?.price30Day || 0), 0)
       recommendations.push(
-        `${walmartAvailableCount} of ${medications.length} medications are available in Walmart's $4 program.`
+        `${walmartAvailableCount} medications in Walmart $4 program = $${walmartTotal.toFixed(2)}/month`
       )
     }
 
-    if (medications.length >= 3 && costcoTotalAnnual < totalWalmartAnnual) {
+    // Costco recommendation
+    if (medications.length >= 2 && costcoTotalAnnual < totalAnnual) {
       recommendations.push(
-        `Costco pharmacy might save you $${(totalWalmartAnnual - costcoTotalAnnual).toFixed(2)}/year (including $60 membership).`
+        `💰 Costco pharmacy could save $${(totalAnnual - costcoTotalAnnual).toFixed(2)}/year (includes $60 membership)`
       )
     }
 
-    if (savings > 0) {
+    // Insurance comparison
+    if (savingsVsInsurance > 0) {
       recommendations.push(
-        `Paying cash at Walmart could save you $${savings.toFixed(2)}/year vs typical insurance copays.`
+        `📊 Paying cash saves $${savingsVsInsurance.toFixed(2)}/year vs typical insurance copays ($${typicalInsuranceCopay}/each)`
       )
+    } else if (savingsVsInsurance < -100) {
+      recommendations.push(
+        `⚠️ For these medications, insurance may be cheaper than cash pricing.`
+      )
+    }
+
+    // DPC-specific recommendation
+    if (medications.length > 0) {
+      const monthlyPerMed = totalMonthly / medications.length
+      if (monthlyPerMed < 15) {
+        recommendations.push(
+          `✅ With DPC, your medications average $${monthlyPerMed.toFixed(2)}/month each - excellent for cash pay!`
+        )
+      }
     }
 
     return {
       medications: pricingResults,
-      totalMonthly: totalWalmartMonthly,
-      totalAnnual: totalWalmartAnnual,
+      totalMonthly: Math.round(totalMonthly * 100) / 100,
+      totalAnnual: Math.round(totalAnnual * 100) / 100,
       savingsPrograms: {
         walmart: {
           availableCount: walmartAvailableCount,
-          monthlyCost: totalWalmartMonthly,
-          annualCost: totalWalmartAnnual,
-          savings: savings > 0 ? savings : 0,
+          monthlyCost: pricingResults
+            .filter(p => p.pricing.walmart4Dollar?.available)
+            .reduce((sum, p) => sum + (p.pricing.walmart4Dollar?.price30Day || 0), 0),
+          annualCost: pricingResults
+            .filter(p => p.pricing.walmart4Dollar?.available)
+            .reduce((sum, p) => sum + (p.pricing.walmart4Dollar?.price30Day || 0) * 12, 0),
+          savings: savingsVsInsurance > 0 ? savingsVsInsurance : 0,
         },
         costco: {
-          estimatedMonthlyCost: walmartMonthlyCost + estimatedCostcoMonthly,
-          estimatedAnnualCost: (walmartMonthlyCost + estimatedCostcoMonthly) * 12,
+          estimatedMonthlyCost: costcoMonthly,
+          estimatedAnnualCost: costcoAnnual,
           membershipCost: costcoMembershipCost,
-          totalAnnualWithMembership: costcoTotalAnnual + walmartMonthlyCost * 12,
+          totalAnnualWithMembership: costcoTotalAnnual,
         },
       },
       recommendations,

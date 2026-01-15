@@ -1,44 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { analytics } from '../utils/analytics'
 import FeaturedProvidersSkeleton from '../components/FeaturedProvidersSkeleton'
-
-interface Provider {
-  id: string
-  name: string
-  city: string
-  state: string
-  monthlyFee: number
-  acceptingPatients: boolean
-  phone?: string
-  website?: string
-}
+import { useCityProviders } from '../hooks/useCityProviders'
 
 export default function SanFranciscoDPC() {
   const navigate = useNavigate()
-  const [providers, setProviders] = useState<Provider[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use shared hook for data fetching - 94102 is central SF
+  const { providers, stats, loading } = useCityProviders('94102', 30)
 
   useEffect(() => {
     analytics.trackPageView('/san-francisco-dpc')
-    fetchProviders()
   }, [])
-
-  const fetchProviders = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/providers/search?zipCode=94102&radius=30`
-      )
-      if (response.ok) {
-        const data = await response.json()
-        setProviders(data.slice(0, 5))
-      }
-    } catch (error) {
-      console.error('Error fetching providers:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSearchProviders = () => {
     navigate('/providers/search?zipCode=94102&state=CA')
@@ -57,8 +30,8 @@ export default function SanFranciscoDPC() {
           High-quality healthcare at a fraction of Bay Area costs
         </p>
         <p style={styles.heroDescription}>
-          Join San Francisco residents who've discovered 2+ DPC providers offering unlimited
-          primary care access for $50-200/month—less than a single urgent care visit.
+          Join San Francisco residents who've discovered {stats.providerCount > 0 ? `${stats.providerCount}+` : 'local'} DPC providers offering unlimited
+          primary care access for {stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '$50-200'}/month—less than a single urgent care visit.
         </p>
         <div style={styles.heroButtons}>
           <button type="button" onClick={handleSearchProviders} style={styles.primaryButton}>
@@ -74,15 +47,15 @@ export default function SanFranciscoDPC() {
       <div style={styles.statsSection}>
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>2+</div>
+            <div style={styles.statNumber}>{stats.providerCount > 0 ? `${stats.providerCount}+` : '...'}</div>
             <div style={styles.statLabel}>DPC Providers</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>$50-200</div>
-            <div style={styles.statLabel}>Monthly Fee Range</div>
+            <div style={styles.statNumber}>{stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '...'}</div>
+            <div style={styles.statLabel}>Avg Monthly Fee</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>$5,200+</div>
+            <div style={styles.statNumber}>{stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '...'}</div>
             <div style={styles.statLabel}>Annual Savings</div>
           </div>
           <div style={styles.statCard}>
@@ -100,7 +73,7 @@ export default function SanFranciscoDPC() {
             <div style={styles.benefitIcon}>💰</div>
             <h3 style={styles.benefitTitle}>Beat Bay Area Costs</h3>
             <p style={styles.benefitText}>
-              Save $5,200+/year vs. traditional insurance. DPC + catastrophic coverage costs less
+              Save {stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '$5,200+'}/year vs. traditional insurance. DPC + catastrophic coverage costs less
               than SF employer plans
             </p>
           </div>
@@ -195,7 +168,7 @@ export default function SanFranciscoDPC() {
             <div style={styles.stepNumber}>2</div>
             <h3 style={styles.stepTitle}>Pay Monthly Membership</h3>
             <p style={styles.stepText}>
-              Pay $50-200/month for unlimited primary care. No copays, no surprises
+              Pay {stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '$50-200'}/month for unlimited primary care. No copays, no surprises
             </p>
           </div>
           <div style={styles.stepCard}>

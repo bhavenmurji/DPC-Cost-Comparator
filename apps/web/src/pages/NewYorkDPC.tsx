@@ -1,44 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { analytics } from '../utils/analytics'
 import FeaturedProvidersSkeleton from '../components/FeaturedProvidersSkeleton'
-
-interface Provider {
-  id: string
-  name: string
-  city: string
-  state: string
-  monthlyFee: number
-  acceptingPatients: boolean
-  phone?: string
-  website?: string
-}
+import { useCityProviders } from '../hooks/useCityProviders'
 
 export default function NewYorkDPC() {
   const navigate = useNavigate()
-  const [providers, setProviders] = useState<Provider[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use shared hook for data fetching - 10001 is midtown Manhattan
+  const { providers, stats, loading } = useCityProviders('10001', 30)
 
   useEffect(() => {
     analytics.trackPageView('/new-york-dpc')
-    fetchProviders()
   }, [])
-
-  const fetchProviders = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/providers/search?zipCode=10001&radius=30`
-      )
-      if (response.ok) {
-        const data = await response.json()
-        setProviders(data.slice(0, 5))
-      }
-    } catch (error) {
-      console.error('Error fetching providers:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSearchProviders = () => {
     navigate('/providers/search?zipCode=10001&state=NY')
@@ -57,8 +30,8 @@ export default function NewYorkDPC() {
           Skip the wait, get the care you deserve
         </p>
         <p style={styles.heroDescription}>
-          Discover 15+ DPC providers across NYC offering unlimited primary care access for
-          $59-149/month. Same-day appointments, subway-accessible locations, multilingual care.
+          Discover {stats.providerCount > 0 ? `${stats.providerCount}+` : 'local'} DPC providers across NYC offering unlimited primary care access for
+          {stats.avgMonthlyFee > 0 ? ` $${stats.avgMonthlyFee}` : ' $59-149'}/month. Same-day appointments, subway-accessible locations, multilingual care.
         </p>
         <div style={styles.heroButtons}>
           <button type="button" onClick={handleSearchProviders} style={styles.primaryButton}>
@@ -74,15 +47,15 @@ export default function NewYorkDPC() {
       <div style={styles.statsSection}>
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>15+</div>
+            <div style={styles.statNumber}>{stats.providerCount > 0 ? `${stats.providerCount}+` : '...'}</div>
             <div style={styles.statLabel}>DPC Providers</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>$59-149</div>
+            <div style={styles.statNumber}>{stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '...'}</div>
             <div style={styles.statLabel}>Avg Monthly Fee</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>$5,000+</div>
+            <div style={styles.statNumber}>{stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '...'}</div>
             <div style={styles.statLabel}>Annual Savings</div>
           </div>
           <div style={styles.statCard}>
@@ -124,7 +97,7 @@ export default function NewYorkDPC() {
             <div style={styles.benefitIcon}>💰</div>
             <h3 style={styles.benefitTitle}>Huge Savings</h3>
             <p style={styles.benefitText}>
-              Save $5,000+/year vs. traditional NYC insurance. Perfect for freelancers,
+              Save {stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '$5,000+'}/year vs. traditional NYC insurance. Perfect for freelancers,
               gig workers, and small business owners
             </p>
           </div>
@@ -189,7 +162,7 @@ export default function NewYorkDPC() {
             <div style={styles.stepNumber}>1</div>
             <h3 style={styles.stepTitle}>Choose Your Provider</h3>
             <p style={styles.stepText}>
-              Browse 15+ DPC practices across NYC. Compare monthly fees, locations, and
+              Browse {stats.providerCount > 0 ? `${stats.providerCount}+` : ''} DPC practices across NYC. Compare monthly fees, locations, and
               language capabilities
             </p>
           </div>
@@ -197,7 +170,7 @@ export default function NewYorkDPC() {
             <div style={styles.stepNumber}>2</div>
             <h3 style={styles.stepTitle}>Pay Monthly Membership</h3>
             <p style={styles.stepText}>
-              Pay $59-149/month for unlimited primary care. No copays, no deductibles, no
+              Pay {stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '$59-149'}/month for unlimited primary care. No copays, no deductibles, no
               billing headaches
             </p>
           </div>

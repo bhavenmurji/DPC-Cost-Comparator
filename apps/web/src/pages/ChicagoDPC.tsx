@@ -1,44 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { analytics } from '../utils/analytics'
 import FeaturedProvidersSkeleton from '../components/FeaturedProvidersSkeleton'
-
-interface Provider {
-  id: string
-  name: string
-  city: string
-  state: string
-  monthlyFee: number
-  acceptingPatients: boolean
-  phone?: string
-  website?: string
-}
+import { useCityProviders } from '../hooks/useCityProviders'
 
 export default function ChicagoDPC() {
   const navigate = useNavigate()
-  const [providers, setProviders] = useState<Provider[]>([])
-  const [loading, setLoading] = useState(true)
+  // 60601 is downtown Chicago - fetch providers within 50 miles
+  const { providers, stats, loading } = useCityProviders('60601', 50)
 
   useEffect(() => {
     analytics.trackPageView('/chicago-dpc')
-    fetchProviders()
   }, [])
-
-  const fetchProviders = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/providers/search?zipCode=60601&radius=50`
-      )
-      if (response.ok) {
-        const data = await response.json()
-        setProviders(data.slice(0, 5))
-      }
-    } catch (error) {
-      console.error('Error fetching providers:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSearchProviders = () => {
     navigate('/providers/search?zipCode=60601&state=IL')
@@ -57,8 +30,8 @@ export default function ChicagoDPC() {
           Midwest affordability meets world-class healthcare
         </p>
         <p style={styles.heroDescription}>
-          Discover 13+ DPC providers across Chicagoland offering unlimited primary care access
-          for an average of $159/month. Neighborhood-based care with family-friendly practices.
+          Discover {stats.providerCount > 0 ? `${stats.providerCount}+` : 'local'} DPC providers across Chicagoland offering unlimited primary care access
+          for an average of {stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '$150-175'}/month. Neighborhood-based care with family-friendly practices.
         </p>
         <div style={styles.heroButtons}>
           <button type="button" onClick={handleSearchProviders} style={styles.primaryButton}>
@@ -74,15 +47,15 @@ export default function ChicagoDPC() {
       <div style={styles.statsSection}>
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>13+</div>
+            <div style={styles.statNumber}>{stats.providerCount > 0 ? `${stats.providerCount}+` : '...'}</div>
             <div style={styles.statLabel}>DPC Providers</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>$159</div>
+            <div style={styles.statNumber}>{stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '...'}</div>
             <div style={styles.statLabel}>Avg Monthly Fee</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statNumber}>$4,200+</div>
+            <div style={styles.statNumber}>{stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '...'}</div>
             <div style={styles.statLabel}>Annual Savings</div>
           </div>
           <div style={styles.statCard}>
@@ -100,7 +73,7 @@ export default function ChicagoDPC() {
             <div style={styles.benefitIcon}>💵</div>
             <h3 style={styles.benefitTitle}>Midwest Affordability</h3>
             <p style={styles.benefitText}>
-              Save $4,200+/year compared to traditional Chicago insurance plans. Get more care for
+              Save {stats.estimatedSavings > 0 ? `$${stats.estimatedSavings.toLocaleString()}+` : '$4,000+' }/year compared to traditional Chicago insurance plans. Get more care for
               less money with transparent pricing
             </p>
           </div>
@@ -189,7 +162,7 @@ export default function ChicagoDPC() {
             <div style={styles.stepNumber}>1</div>
             <h3 style={styles.stepTitle}>Choose Your Provider</h3>
             <p style={styles.stepText}>
-              Browse 13+ DPC practices across Chicago and suburbs. Compare fees, neighborhoods,
+              Browse {stats.providerCount > 0 ? `${stats.providerCount}+` : ''} DPC practices across Chicago and suburbs. Compare fees, neighborhoods,
               and family services
             </p>
           </div>
@@ -197,7 +170,7 @@ export default function ChicagoDPC() {
             <div style={styles.stepNumber}>2</div>
             <h3 style={styles.stepTitle}>Pay Monthly Membership</h3>
             <p style={styles.stepText}>
-              Pay around $159/month for unlimited primary care. No copays, no deductibles, no
+              Pay around {stats.avgMonthlyFee > 0 ? `$${stats.avgMonthlyFee}` : '$150-175'}/month for unlimited primary care. No copays, no deductibles, no
               hidden fees
             </p>
           </div>
