@@ -130,9 +130,18 @@ model DPCProvider {
   email                 String?
   website               String?
 
-  // DPC details
+  // DPC details - Pricing
   monthlyFee            Float
-  familyFee             Float?
+  childMonthlyFee       Float?                // Pediatric/child monthly fee
+  familyFee             Float?                // Family/household monthly fee
+  enrollmentFee         Float?                // One-time enrollment/onboarding fee
+  annualDiscount        String?               // e.g., "2 months free" or "10%"
+  pricingTiers          Json?                 // Age-based or visit-based tiers
+  pricingNotes          String?               // Additional pricing context
+  pricingConfidence     String?               // "high", "medium", "low", "none"
+  pricingScrapedAt      DateTime?             // When pricing was last scraped
+
+  // DPC details - Practice
   acceptingPatients     Boolean               @default(true)
   servicesIncluded      String[]
   patientCapacity       Int?                  // Total patient capacity
