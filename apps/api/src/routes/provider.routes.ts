@@ -121,7 +121,7 @@ router.get('/search', async (req, res) => {
         phone: p.phone,
         website: p.website,
         monthlyFee: p.monthlyFee,
-        servicesOffered: p.servicesOffered,
+        servicesOffered: p.servicesIncluded,
         rating: p.rating,
         verified: p.verified,
         distance: 'distance' in p ? p.distance : null,
