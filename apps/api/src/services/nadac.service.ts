@@ -284,8 +284,8 @@ export class NADACService {
           ndc: drug.ndc,
           drugName: drug.drugName,
           genericName: drug.drugName, // NADAC doesn't separate brand/generic names
-          dosage: drug.strength || 'unknown',
-          form: drug.form || 'unknown',
+          dosage: drug.pricingUnit || 'unit',
+          form: 'unknown',
           quantity: 30,
           zipCode: '00000', // NADAC is national pricing
           pharmacyName: 'NADAC',
