@@ -284,14 +284,21 @@ export class NADACService {
           ndc: drug.ndc,
           drugName: drug.drugName,
           genericName: drug.drugName, // NADAC doesn't separate brand/generic names
+          dosage: drug.strength || 'unknown',
+          form: drug.form || 'unknown',
+          quantity: 30,
+          zipCode: '00000', // NADAC is national pricing
+          pharmacyName: 'NADAC',
           price: drug.estimated30DayRetail,
           source: 'NADAC',
-          sourceUrl: 'https://data.medicaid.gov/nadac',
+          sourceId: drug.ndc,
           cachedAt: new Date(),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         },
         update: {
           price: drug.estimated30DayRetail,
           cachedAt: new Date(),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
       })
     }
