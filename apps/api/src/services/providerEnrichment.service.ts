@@ -148,6 +148,14 @@ class ProviderEnrichmentService {
       }
 
       // Step 4: Update provider with NPI data
+      // Check if NPI is already used by another provider (same physician, multiple locations)
+      const existingNPI = await prisma.dPCProvider.findFirst({
+        where: {
+          npi: match.provider.npi,
+          id: { not: providerId },
+        },
+      })
+
       await prisma.dPCProvider.update({
         where: { id: providerId },
         data: {
@@ -157,8 +165,8 @@ class ProviderEnrichmentService {
           state: match.provider.practiceAddress.state || location.stateAbbrev,
           zipCode: match.provider.practiceAddress.zip || location.zip,
           phone: match.provider.practiceAddress.phone || provider.phone,
-          // Store NPI for future reference
-          npi: match.provider.npi,
+          // Only set NPI if not already used by another provider
+          ...(existingNPI ? {} : { npi: match.provider.npi }),
         },
       })
 
