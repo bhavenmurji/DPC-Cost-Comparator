@@ -13,7 +13,9 @@
     "prisma:migrate": "prisma migrate dev",
     "scrape:dpc": "tsx ../../scripts/scrape-dpc-providers.ts",
     "scrape:dpc:test": "tsx ../../scripts/scrape-dpc-providers.ts --limit 10",
-    "import:walmart": "tsx ../../scripts/import-walmart-programs.ts"
+    "import:walmart": "tsx ../../scripts/import-walmart-programs.ts",
+    "enrich:providers": "tsx ../../scripts/enrich-providers-npi.ts",
+    "enrich:providers:test": "tsx ../../scripts/enrich-providers-npi.ts --limit 10"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",
