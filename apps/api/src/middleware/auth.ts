@@ -130,7 +130,7 @@ export const generateAccessToken = (user: AuthUser): string => {
     },
     config.jwt.secret,
     {
-      expiresIn: config.jwt.expiresIn,
+      expiresIn: config.jwt.expiresIn as jwt.SignOptions['expiresIn'],
       issuer: 'dpc-comparator',
       audience: 'dpc-comparator-api',
     }
@@ -145,7 +145,7 @@ export const generateRefreshToken = (user: AuthUser): string => {
     },
     config.jwt.refreshSecret,
     {
-      expiresIn: config.jwt.refreshExpiresIn,
+      expiresIn: config.jwt.refreshExpiresIn as jwt.SignOptions['expiresIn'],
       issuer: 'dpc-comparator',
       audience: 'dpc-comparator-api',
     }
