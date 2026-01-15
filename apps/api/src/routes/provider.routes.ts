@@ -139,7 +139,8 @@ router.get('/search', async (req, res) => {
       })),
     })
   } catch (error) {
-    console.error('Error searching providers:', error)
+    // Use String() to avoid Node.js v25 inspect issues with Prisma errors
+    console.error('Error searching providers:', error instanceof Error ? error.message : String(error))
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
