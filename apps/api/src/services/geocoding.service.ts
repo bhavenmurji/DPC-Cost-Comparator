@@ -178,6 +178,99 @@ export class GeocodingService {
   }
 
   /**
+   * Reverse geocode coordinates to get city, state, ZIP
+   * Uses OpenStreetMap Nominatim API (free, no auth required)
+   *
+   * @param lat - Latitude
+   * @param lng - Longitude
+   * @returns Location data or null if not found
+   */
+  async reverseGeocode(lat: number, lng: number): Promise<ReverseGeoResult | null> {
+    // Round coordinates for cache key (4 decimals = ~11m precision)
+    const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`
+
+    // Check cache first
+    const cached = this.getFromReverseCache(cacheKey)
+    if (cached) {
+      return cached
+    }
+
+    // Check rate limit
+    if (!this.checkRateLimit()) {
+      console.warn('[ReverseGeo] Daily rate limit reached')
+      return null
+    }
+
+    try {
+      // Nominatim requires a User-Agent header
+      const response = await axios.get<{
+        address?: {
+          city?: string
+          town?: string
+          village?: string
+          municipality?: string
+          hamlet?: string
+          county?: string
+          state?: string
+          postcode?: string
+          road?: string
+          house_number?: string
+        }
+        error?: string
+      }>('https://nominatim.openstreetmap.org/reverse', {
+        params: {
+          lat,
+          lon: lng,
+          format: 'json',
+          addressdetails: 1,
+        },
+        headers: {
+          'User-Agent': 'DPC-Comparator/1.0 (healthcare cost comparison tool)',
+        },
+        timeout: 5000,
+      })
+
+      this.incrementRequestCount()
+
+      if (response.data.error || !response.data.address) {
+        console.warn(`[ReverseGeo] No address found for ${lat}, ${lng}`)
+        return null
+      }
+
+      const addr = response.data.address
+      const stateFull = addr.state || ''
+      const stateAbbrev = STATE_ABBREVIATIONS[stateFull] || stateFull.substring(0, 2).toUpperCase()
+
+      // City can be in multiple fields depending on population
+      const city = addr.city || addr.town || addr.village || addr.municipality || addr.hamlet || ''
+
+      const result: ReverseGeoResult = {
+        city,
+        state: stateFull,
+        stateAbbrev,
+        zip: addr.postcode?.substring(0, 5) || '',
+        county: addr.county,
+        street: addr.road ? `${addr.house_number || ''} ${addr.road}`.trim() : undefined,
+        cached: false,
+      }
+
+      // Cache the result
+      this.setReverseCache(cacheKey, result)
+
+      console.log(`[ReverseGeo] Resolved (${lat.toFixed(4)}, ${lng.toFixed(4)}) → ${result.city}, ${result.stateAbbrev} ${result.zip}`)
+
+      return result
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error(`[ReverseGeo] API error for (${lat}, ${lng}):`, error.message)
+      } else {
+        console.error(`[ReverseGeo] Unexpected error:`, error)
+      }
+      return null
+    }
+  }
+
+  /**
    * Batch geocode multiple ZIP codes
    */
   async batchGeocode(zipCodes: string[]): Promise<Map<string, GeoCoordinates | null>> {
