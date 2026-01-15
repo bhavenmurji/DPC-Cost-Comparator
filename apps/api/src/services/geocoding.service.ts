@@ -27,6 +27,19 @@ export interface GeoCoordinates {
 }
 
 /**
+ * Reverse geocoding result
+ */
+export interface ReverseGeoResult {
+  city: string
+  state: string
+  stateAbbrev: string
+  zip: string
+  county?: string
+  street?: string
+  cached: boolean
+}
+
+/**
  * In-memory cache for geocoding results
  * ZIP codes don't move, so we can cache aggressively
  */
