@@ -5,11 +5,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import express, { Express, Request, Response } from 'express'
 import request from 'supertest'
+import jwt from 'jsonwebtoken'
 import { requireAuth, optionalAuth, requireRole } from '../../apps/api/src/middleware/auth.middleware'
 import { auditMiddleware } from '../../apps/api/src/middleware/audit.middleware'
 
 describe('Middleware Integration Tests', () => {
   let app: Express
+  const validToken = jwt.sign(
+    { id: 'user-123', email: 'test@test.com', role: 'USER' },
+    process.env.JWT_SECRET || 'test-secret-key'
+  )
 
   describe('Authentication Middleware', () => {
     beforeEach(() => {
@@ -43,7 +48,7 @@ describe('Middleware Integration Tests', () => {
 
       const response = await request(app)
         .get('/protected')
-        .set('Authorization', 'Bearer valid-token')
+        .set('Authorization', `Bearer ${validToken}`)
         .expect(200)
 
       expect(response.body.success).toBe(true)
@@ -58,7 +63,7 @@ describe('Middleware Integration Tests', () => {
 
       const response = await request(app)
         .get('/protected')
-        .set('Authorization', 'Bearer valid-token')
+        .set('Authorization', `Bearer ${validToken}`)
         .expect(200)
 
       expect(response.body.user).toHaveProperty('id')
@@ -90,7 +95,7 @@ describe('Middleware Integration Tests', () => {
 
       const response = await request(app)
         .get('/public')
-        .set('Authorization', 'Bearer valid-token')
+        .set('Authorization', `Bearer ${validToken}`)
         .expect(200)
 
       expect(response.body.user).toBeDefined()
@@ -122,7 +127,7 @@ describe('Middleware Integration Tests', () => {
         '/admin',
         (req, res, next) => {
           // Mock user with ADMIN role
-          ;(req as any).user = { id: '1', email: 'admin@test.com', role: 'ADMIN' }
+          ; (req as any).user = { id: '1', email: 'admin@test.com', role: 'ADMIN' }
           next()
         },
         requireRole('ADMIN'),
@@ -139,7 +144,7 @@ describe('Middleware Integration Tests', () => {
         '/admin',
         (req, res, next) => {
           // Mock user with USER role
-          ;(req as any).user = { id: '1', email: 'user@test.com', role: 'USER' }
+          ; (req as any).user = { id: '1', email: 'user@test.com', role: 'USER' }
           next()
         },
         requireRole('ADMIN'),
@@ -163,7 +168,7 @@ describe('Middleware Integration Tests', () => {
       app.get(
         '/resource',
         (req, res, next) => {
-          ;(req as any).user = { id: '1', email: 'user@test.com', role: 'MODERATOR' }
+          ; (req as any).user = { id: '1', email: 'user@test.com', role: 'MODERATOR' }
           next()
         },
         requireRole('ADMIN', 'MODERATOR'),
@@ -184,7 +189,7 @@ describe('Middleware Integration Tests', () => {
     })
 
     it('should log all requests', async () => {
-      const consoleSpy = vi.spyOn(console, 'log')
+      const consoleSpy = vi.spyOn(console, 'info')
 
       app.get('/test', (req, res) => {
         res.json({ success: true })
@@ -202,12 +207,12 @@ describe('Middleware Integration Tests', () => {
     })
 
     it('should log user information when authenticated', async () => {
-      const consoleSpy = vi.spyOn(console, 'log')
+      const consoleSpy = vi.spyOn(console, 'info')
 
       app.get(
         '/protected',
         (req, res, next) => {
-          ;(req as any).user = { id: 'user-123', email: 'test@test.com', role: 'USER' }
+          ; (req as any).user = { id: 'user-123', email: 'test@test.com', role: 'USER' }
           next()
         },
         (req, res) => {
@@ -231,7 +236,7 @@ describe('Middleware Integration Tests', () => {
     })
 
     it('should log request method and path', async () => {
-      const consoleSpy = vi.spyOn(console, 'log')
+      const consoleSpy = vi.spyOn(console, 'info')
 
       app.post('/create', (req, res) => {
         res.json({ success: true })
@@ -254,7 +259,7 @@ describe('Middleware Integration Tests', () => {
     })
 
     it('should log response status code', async () => {
-      const consoleSpy = vi.spyOn(console, 'log')
+      const consoleSpy = vi.spyOn(console, 'info')
 
       app.get('/test', (req, res) => {
         res.status(201).json({ success: true })
@@ -276,7 +281,7 @@ describe('Middleware Integration Tests', () => {
     })
 
     it('should log request duration', async () => {
-      const consoleSpy = vi.spyOn(console, 'log')
+      const consoleSpy = vi.spyOn(console, 'info')
 
       app.get('/test', async (req, res) => {
         // Simulate some processing time
