@@ -26,7 +26,7 @@ export interface ProviderSearchParams {
 
 export interface ProviderWithDistance {
   id: string
-  npi: string
+  npi: string | null
   name: string
   practiceName: string
   address: string
