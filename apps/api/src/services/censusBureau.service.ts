@@ -239,7 +239,7 @@ export class CensusBureauService {
     delayMs: number = 100
   ): Promise<Map<string, FipsLookupResult>> {
     const results = new Map<string, FipsLookupResult>()
-    const uniqueZips = [...new Set(zipCodes)]
+    const uniqueZips = Array.from(new Set(zipCodes))
 
     for (const zip of uniqueZips) {
       const result = await this.lookupFipsByZip(zip)
