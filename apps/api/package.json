@@ -19,6 +19,9 @@
     "match:dpca:report": "tsx ../../scripts/match-dpca-providers.ts --report",
     "scrape:fees": "tsx ../../scripts/scrape-practice-fees.ts",
     "scrape:fees:report": "tsx ../../scripts/scrape-practice-fees.ts --report",
+    "pricing:save": "tsx ../../scripts/save-scraped-pricing.ts",
+    "pricing:scrape": "tsx ../../scripts/scrape-practice-pricing.ts",
+    "pricing:scrape:test": "tsx ../../scripts/scrape-practice-pricing.ts --limit 10",
     "import:walmart": "tsx ../../scripts/import-walmart-programs.ts",
     "enrich:providers": "tsx ../../scripts/enrich-providers-npi.ts",
     "enrich:providers:test": "tsx ../../scripts/enrich-providers-npi.ts --limit 10"
