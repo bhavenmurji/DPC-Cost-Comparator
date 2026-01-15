@@ -158,7 +158,7 @@ class ProviderEnrichmentService {
           zipCode: match.provider.practiceAddress.zip || location.zip,
           phone: match.provider.practiceAddress.phone || provider.phone,
           // Store NPI for future reference
-          npiNumber: match.provider.npi,
+          npi: match.provider.npi,
         },
       })
 
@@ -218,7 +218,7 @@ class ProviderEnrichmentService {
         { name: { startsWith: 'DPC Practice' } },
         { city: 'Unknown' },
         { city: '' },
-        { npiNumber: null },
+        { npi: null },
       ]
     }
 
