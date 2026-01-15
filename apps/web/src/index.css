@@ -1,9 +1,9 @@
+/* Import mobile-responsive utilities - must be before @tailwind */
+@import './styles/responsive.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import mobile-responsive utilities */
-@import './styles/responsive.css';
 
 @layer base {
   :root {
