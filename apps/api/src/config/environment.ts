@@ -12,11 +12,19 @@ export const environment = {
   // Database
   DATABASE_URL: process.env.DATABASE_URL || '',
 
-  // Auth
+  // Auth (flat for backwards compatibility)
   JWT_SECRET: process.env.JWT_SECRET || 'dev-secret-change-in-production',
   SUPABASE_URL: process.env.SUPABASE_URL || '',
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+
+  // JWT configuration (structured for auth middleware)
+  jwt: {
+    secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
+    refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-in-production',
+    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+  },
 
   // External APIs
   NPI_REGISTRY_API_URL: process.env.NPI_REGISTRY_API_URL || 'https://npiregistry.cms.hhs.gov/api/',
