@@ -514,19 +514,21 @@ export class PrescriptionPricingService {
       take: 10,
     })
 
-    return medications.map((med) => ({
-      medicationName: med.drugName,
-      genericName: med.genericName,
-      strength: med.dosage || undefined,
-      form: med.form || undefined,
-      pricing: {
-        walmart4Dollar: {
-          price30Day: med.price30Day,
-          price90Day: med.price90Day,
-          available: true,
+    return medications
+      .filter((med) => med.price30Day !== null)
+      .map((med) => ({
+        medicationName: med.drugName,
+        genericName: med.genericName,
+        strength: med.dosage || undefined,
+        form: med.form || undefined,
+        pricing: {
+          walmart4Dollar: {
+            price30Day: med.price30Day!,
+            price90Day: med.price90Day,
+            available: true,
+          },
         },
-      },
-    }))
+      }))
   }
 }
 
