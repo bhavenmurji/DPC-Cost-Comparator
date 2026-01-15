@@ -407,8 +407,48 @@ export async function lookupCountyFips(zipCode: string): Promise<string | null> 
 }
 
 /**
- * Add more ZIP/county mappings to the lookup table
+ * Add ZIP/county mapping to the runtime cache
  */
 export function addCountyFipsMapping(zipCode: string, countyFips: string): void {
-  COUNTY_FIPS_BY_ZIP[zipCode] = countyFips
+  RUNTIME_FIPS_CACHE.set(zipCode, countyFips)
+}
+
+/**
+ * Pre-load FIPS data for a ZIP code before making Healthcare.gov API calls
+ * This ensures the synchronous inferCountyFipsFromZip has the correct data
+ *
+ * @param zipCode - 5-digit US ZIP code
+ * @returns The resolved FIPS code
+ */
+export async function ensureFipsLoaded(zipCode: string): Promise<string> {
+  // First try to load via Census Bureau API
+  const fips = await lookupCountyFips(zipCode)
+  return fips || inferCountyFipsFromZip(zipCode)
+}
+
+/**
+ * Transform input to Place with async FIPS resolution
+ * Use this instead of transformToPlace when you need accurate county data
+ */
+export async function transformToPlaceAsync(input: ComparisonInput): Promise<HealthcareGovPlace> {
+  const state = input.state || inferStateFromZip(input.zipCode)
+
+  // Pre-load FIPS via Census Bureau API
+  const countyfips = await ensureFipsLoaded(input.zipCode)
+
+  return {
+    state,
+    zipcode: input.zipCode,
+    countyfips,
+  }
+}
+
+/**
+ * Get FIPS cache statistics
+ */
+export function getFipsCacheStats(): { size: number; entries: string[] } {
+  return {
+    size: RUNTIME_FIPS_CACHE.size,
+    entries: Array.from(RUNTIME_FIPS_CACHE.keys()).slice(0, 20), // First 20 entries
+  }
 }
