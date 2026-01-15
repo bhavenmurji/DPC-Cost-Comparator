@@ -5,6 +5,8 @@
  */
 
 export class AppError extends Error {
+  public errorCode: string;
+
   constructor(
     message: string,
     public statusCode: number = 500,
@@ -13,6 +15,7 @@ export class AppError extends Error {
   ) {
     super(message);
     this.name = this.constructor.name;
+    this.errorCode = code; // Alias for backwards compatibility
     Error.captureStackTrace(this, this.constructor);
   }
 }
