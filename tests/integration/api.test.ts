@@ -12,6 +12,7 @@ describe('API Integration Tests', () => {
 
   beforeAll(() => {
     // Set up test server
+    process.env.USE_MOCK_DATA = 'true'
     app = express()
     app.use(express.json())
     app.use('/api/comparison', comparisonRoutes)
@@ -45,8 +46,9 @@ describe('API Integration Tests', () => {
         })
         .expect(400)
 
-      expect(response.body.error).toBeDefined()
-      expect(response.body.error).toContain('required fields')
+      expect(response.body.error).toBe('Validation failed')
+      expect(response.body.details).toBeDefined()
+      expect(response.body.details.length).toBeGreaterThan(0)
     })
 
     it('should return 400 for invalid age (too young)', async () => {
@@ -59,7 +61,8 @@ describe('API Integration Tests', () => {
         })
         .expect(400)
 
-      expect(response.body.error).toContain('Age')
+      expect(response.body.error).toBe('Validation failed')
+      expect(response.body.details[0].field).toContain('age')
     })
 
     it('should return 400 for invalid age (too old)', async () => {
@@ -72,7 +75,8 @@ describe('API Integration Tests', () => {
         })
         .expect(400)
 
-      expect(response.body.error).toContain('Age')
+      expect(response.body.error).toBe('Validation failed')
+      expect(response.body.details[0].field).toContain('age')
     })
 
     it('should handle optional fields with defaults', async () => {

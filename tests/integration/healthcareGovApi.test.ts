@@ -20,7 +20,22 @@ import {
 } from '../../apps/api/src/types/healthcareGov.types'
 
 // Mock axios
-vi.mock('axios')
+const mockAxiosInstance = {
+  get: vi.fn(),
+  post: vi.fn(),
+  interceptors: {
+    request: { use: vi.fn() },
+    response: { use: vi.fn() },
+  },
+}
+
+vi.mock('axios', () => ({
+  default: {
+    create: vi.fn(() => mockAxiosInstance),
+    isAxiosError: vi.fn(),
+  },
+}))
+
 const mockedAxios = axios as any
 
 describe('HealthcareGovApiClient', () => {
