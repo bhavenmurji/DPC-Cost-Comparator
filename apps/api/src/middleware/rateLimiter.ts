@@ -188,7 +188,7 @@ export const publicLimiter: RateLimitRequestHandler = rateLimit({
  *
  * To whitelist specific IPs (e.g., internal services, monitoring):
  */
-const WHITELISTED_IPS = [
+const WHITELISTED_IPS: string[] = [
   // Add whitelisted IPs here
   // '127.0.0.1',
   // '::1',
