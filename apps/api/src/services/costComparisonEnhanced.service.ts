@@ -182,6 +182,11 @@ async function fetchRealPlanData(
 }> {
   const client = getHealthcareGovClient()
 
+  // Pre-load FIPS data via Census Bureau API before making Healthcare.gov calls
+  // This ensures we have accurate county data for plan lookups
+  const countyFips = await ensureFipsLoaded(input.zipCode)
+  console.log(`[CostComparison] Using County FIPS ${countyFips} for ZIP ${input.zipCode}`)
+
   // Search for traditional plans (silver tier as benchmark)
   const traditionalRequest = transformToPlanSearchRequest(input, {
     metalLevel: ['silver'],
