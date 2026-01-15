@@ -3,7 +3,7 @@
  * Logs all access to protected health information
  */
 import { Request, Response, NextFunction } from 'express'
-import { logger } from '../../../src/backend/utils/logger'
+import { logger } from '../utils/logger'
 
 export interface AuditLogEntry {
   timestamp: string
