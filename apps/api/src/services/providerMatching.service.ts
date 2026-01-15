@@ -29,7 +29,7 @@ export interface MatchedProviderResult {
 
 export interface DPCProviderInfo {
   id: string
-  npi: string
+  npi: string | null
   name: string
   practiceName: string
   address: string
@@ -37,19 +37,19 @@ export interface DPCProviderInfo {
   state: string
   zipCode: string
   phone: string
-  email?: string
-  website?: string
+  email?: string | null
+  website?: string | null
   monthlyFee: number
-  familyFee?: number
+  familyFee?: number | null
   acceptingPatients: boolean
   servicesIncluded: string[]
   specialties: string[]
   boardCertifications: string[]
   languages: string[]
-  rating?: number
+  rating?: number | null
   reviewCount: number
-  latitude?: number
-  longitude?: number
+  latitude?: number | null
+  longitude?: number | null
 }
 
 /**
