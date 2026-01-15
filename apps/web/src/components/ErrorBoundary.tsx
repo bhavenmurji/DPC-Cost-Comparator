@@ -1,5 +1,5 @@
 import React, { ReactNode, ReactElement } from 'react'
-import { analytics } from '../utils/analytics'
+
 import ErrorFallback from './ErrorFallback'
 
 interface ErrorBoundaryProps {

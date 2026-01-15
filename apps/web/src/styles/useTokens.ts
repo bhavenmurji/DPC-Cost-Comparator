@@ -19,10 +19,9 @@ import designTokens, {
   colors,
   spacing,
   typography,
-  borderRadius,
-  shadows,
+
   components,
-  transitions,
+
 } from './tokens'
 
 /**
@@ -376,9 +375,6 @@ export function createProviderCardStyles(tokensObj = designTokens): React.CSSPro
     marginBottom: tokensObj.spacing[4],
     cursor: 'pointer',
     transition: `all ${tokensObj.transitions.duration.base} ${tokensObj.transitions.timing.ease}`,
-    ':hover': {
-      boxShadow: tokensObj.shadows.cardHover,
-    },
   }
 }
 

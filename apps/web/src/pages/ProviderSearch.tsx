@@ -95,7 +95,7 @@ export default function ProviderSearch() {
     analytics.trackFiltersApplied({
       maxMonthlyFee: newFilters.maxMonthlyFee,
       minRating: newFilters.minRating,
-      acceptingPatients: newFilters.acceptingPatients,
+      acceptingPatients: newFilters.acceptingPatients ?? undefined,
       specialties: newFilters.specialties,
       sortBy: newFilters.sortBy,
     })
