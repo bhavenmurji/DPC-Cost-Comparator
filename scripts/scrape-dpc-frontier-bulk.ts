@@ -326,7 +326,7 @@ async function showReport() {
     where: { pricingConfidence: 'high' },
   })
   const fromFrontier = await prisma.dPCProvider.count({
-    where: { dataSource: 'dpc_frontier' },
+    where: { pricingNotes: { contains: 'DPC Frontier' } },
   })
 
   const avgPrice = await prisma.dPCProvider.aggregate({
