@@ -349,23 +349,54 @@ export class DPCAllianceScraperService {
         // Ignore
       }
 
-      // Extract practice website
+      // Extract practice website - specifically look for "Practice Link" section
       let practiceWebsite: string | undefined
       try {
-        const websiteLink = await page.locator('a[href*="http"]:not([href*="dpcalliance"])').first()
-        if ((await websiteLink.count()) > 0) {
-          const href = await websiteLink.getAttribute('href')
-          if (href && !href.includes('facebook') && !href.includes('linkedin') && !href.includes('instagram') && !href.includes('twitter')) {
+        // Method 1: Look for the link that follows "Practice Link" text
+        // The page structure is: <div>Practice Link</div> followed by <a href="...">domain.com</a>
+        const practiceLink = await page.locator('text=Practice Link').locator('xpath=following-sibling::a[1]').first()
+        if ((await practiceLink.count()) > 0) {
+          const href = await practiceLink.getAttribute('href')
+          if (href) {
             practiceWebsite = href
           }
         }
-        // Also check for "Practice Link" pattern
-        const linkMatch = pageContent.match(/Practice Link[^<]*<a[^>]*href="([^"]+)"/i)
-        if (linkMatch) {
-          practiceWebsite = linkMatch[1]
+
+        // Method 2: Try regex on page content for "Practice Link" followed by link
+        if (!practiceWebsite) {
+          const linkMatch = pageContent.match(/Practice\s*Link[^<]*<[^>]*>[^<]*<a[^>]*href="([^"]+)"/i)
+          if (linkMatch) {
+            practiceWebsite = linkMatch[1]
+          }
+        }
+
+        // Method 3: Look for any link immediately after "Practice Link" text container
+        if (!practiceWebsite) {
+          const practiceLinkContainer = await page.locator(':has-text("Practice Link") + a').first()
+          if ((await practiceLinkContainer.count()) > 0) {
+            const href = await practiceLinkContainer.getAttribute('href')
+            if (href && !href.includes('dpcalliance') && !href.includes('facebook') &&
+                !href.includes('linkedin') && !href.includes('noviams') &&
+                !href.includes('dpccareers')) {
+              practiceWebsite = href
+            }
+          }
+        }
+
+        // Filter out common non-practice URLs that might have slipped through
+        if (practiceWebsite && (
+          practiceWebsite.includes('dpccareers') ||
+          practiceWebsite.includes('dpcalliance') ||
+          practiceWebsite.includes('noviams') ||
+          practiceWebsite.includes('facebook') ||
+          practiceWebsite.includes('linkedin') ||
+          practiceWebsite.includes('instagram') ||
+          practiceWebsite.includes('twitter')
+        )) {
+          practiceWebsite = undefined
         }
       } catch {
-        // Ignore
+        // Ignore errors in website extraction
       }
 
       // Dedupe specialties
