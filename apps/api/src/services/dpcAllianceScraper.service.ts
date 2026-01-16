@@ -350,11 +350,13 @@ export class DPCAllianceScraperService {
       }
 
       // Extract practice website - specifically look for "Practice Link" section
+      // HTML structure: <span class="practice-link">Practice Link</span>
+      //                 <div class="work"><span class="title"><a href="URL">...</a></span></div>
       let practiceWebsite: string | undefined
       try {
-        // Method 1: Look for the link that follows "Practice Link" text
-        // The page structure is: <div>Practice Link</div> followed by <a href="...">domain.com</a>
-        const practiceLink = await page.locator('text=Practice Link').locator('xpath=following-sibling::a[1]').first()
+        // Method 1: Use CSS selector for the actual page structure
+        // The link is inside .work div that follows .practice-link span
+        const practiceLink = await page.locator('.practice-link + .work a, .practice-link ~ .work a').first()
         if ((await practiceLink.count()) > 0) {
           const href = await practiceLink.getAttribute('href')
           if (href) {
@@ -362,24 +364,19 @@ export class DPCAllianceScraperService {
           }
         }
 
-        // Method 2: Try regex on page content for "Practice Link" followed by link
+        // Method 2: Try regex on page content for the nested structure
         if (!practiceWebsite) {
-          const linkMatch = pageContent.match(/Practice\s*Link[^<]*<[^>]*>[^<]*<a[^>]*href="([^"]+)"/i)
+          const linkMatch = pageContent.match(/practice-link[^>]*>Practice\s*Link<\/span>\s*<div[^>]*class="work"[^>]*>\s*<span[^>]*>\s*<a[^>]*href="([^"]+)"/i)
           if (linkMatch) {
             practiceWebsite = linkMatch[1]
           }
         }
 
-        // Method 3: Look for any link immediately after "Practice Link" text container
+        // Method 3: Simpler regex fallback - look for href after "Practice Link"
         if (!practiceWebsite) {
-          const practiceLinkContainer = await page.locator(':has-text("Practice Link") + a').first()
-          if ((await practiceLinkContainer.count()) > 0) {
-            const href = await practiceLinkContainer.getAttribute('href')
-            if (href && !href.includes('dpcalliance') && !href.includes('facebook') &&
-                !href.includes('linkedin') && !href.includes('noviams') &&
-                !href.includes('dpccareers')) {
-              practiceWebsite = href
-            }
+          const simpleMatch = pageContent.match(/Practice\s*Link<\/span>[\s\S]*?<a[^>]*href="([^"]+)"[^>]*target="_blank"/i)
+          if (simpleMatch) {
+            practiceWebsite = simpleMatch[1]
           }
         }
 
