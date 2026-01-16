@@ -75,13 +75,15 @@ async function getPracticeIds(page: Page): Promise<string[]> {
 
 async function scrapePractice(page: Page, practiceId: string): Promise<PracticeData | null> {
   try {
-    await page.goto(`https://mapper.dpcfrontier.com/practice/${practiceId}`, {
+    await page.goto('https://mapper.dpcfrontier.com/practice/' + practiceId, {
       waitUntil: 'networkidle',
       timeout: 15000,
     })
 
-    // Extract data using string-based evaluate to avoid transpilation issues
-    const rawData = await page.evaluate(`
+    // Extract data using pure string evaluate to avoid tsx/esbuild __name injection
+    // Using concatenation instead of template literal to ensure no transpilation
+    const extractScript = [
+      '(function() {',
       (function() {
         var title = '';
         var h1 = document.querySelector('h1');
