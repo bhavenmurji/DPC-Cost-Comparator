@@ -27,7 +27,10 @@
     "enrich:providers:test": "tsx ../../scripts/enrich-providers-npi.ts --limit 10",
     "discover:websites": "tsx ../../scripts/discover-practice-websites.ts",
     "discover:websites:test": "tsx ../../scripts/discover-practice-websites.ts --limit 10",
-    "discover:websites:report": "tsx ../../scripts/discover-practice-websites.ts --report"
+    "discover:websites:report": "tsx ../../scripts/discover-practice-websites.ts --report",
+    "scrape:frontier": "tsx ../../scripts/scrape-dpc-frontier-bulk.ts",
+    "scrape:frontier:test": "tsx ../../scripts/scrape-dpc-frontier-bulk.ts --limit 50",
+    "scrape:frontier:report": "tsx ../../scripts/scrape-dpc-frontier-bulk.ts --report"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",
