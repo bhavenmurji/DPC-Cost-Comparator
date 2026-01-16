@@ -102,6 +102,173 @@ const scrapedPricing = [
       pricingConfidence: 'high' as const,
     },
   },
+  // ========== DPC Frontier Scraped 2026-01-15 ==========
+  {
+    // Quill Health DPC - Las Vegas, NV
+    practiceName: 'Quill Health DPC',
+    website: 'https://www.quillhealthdpc.com',
+    city: 'Las Vegas',
+    state: 'NV',
+    address: '2851 N Tenaya Way, Ste. 203',
+    zipCode: '89128',
+    phone: '702-886-1292',
+    pricing: {
+      individualMonthly: 85, // 19-64 years
+      childMonthly: 45, // 6-18 years
+      familyMonthly: 245,
+      enrollmentFee: 100, // $150 for family
+      pricingTiers: [
+        { label: '6-18 years', monthlyFee: 45, ageMin: 6, ageMax: 18 },
+        { label: '19-64 years', monthlyFee: 85, ageMin: 19, ageMax: 64 },
+        { label: '65+ years', monthlyFee: 105, ageMin: 65, ageMax: 99 },
+        { label: 'Family Plan (2 adults, 2 children)', monthlyFee: 245 },
+      ],
+      pricingNotes: 'Family enrollment fee $150. Additional child $30/mo.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Karismed Family Medicine - Katy, TX
+    practiceName: 'Karismed Family Medicine',
+    website: 'https://www.karismed.com',
+    city: 'Katy',
+    state: 'TX',
+    address: '4011 FM 1463, Suite B',
+    zipCode: '77494',
+    phone: '(832) 930-7799',
+    pricing: {
+      individualMonthly: 99, // Adult 18+
+      childMonthly: 30, // 0-18
+      familyMonthly: null,
+      enrollmentFee: null,
+      pricingTiers: [
+        { label: 'Child (0-18)', monthlyFee: 30, ageMin: 0, ageMax: 18 },
+        { label: 'Adult (18+)', monthlyFee: 99, ageMin: 18, ageMax: 99 },
+      ],
+      pricingNotes: 'Family Medicine. Open since 2018.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Vitality Family Health - Oak Brook, IL
+    practiceName: 'Vitality Family Health',
+    website: 'https://www.vitalityfamilyhealth.com',
+    city: 'Oak Brook',
+    state: 'IL',
+    address: '2809 Butterfield Rd, Ste. 340',
+    zipCode: '60523',
+    phone: '630-948-3300',
+    pricing: {
+      individualMonthly: 150, // Adult Maintenance
+      childMonthly: 75, // Pediatric first child
+      familyMonthly: null,
+      enrollmentFee: 100, // Per family
+      pricingTiers: [
+        { label: 'Adult Maintenance (4 visits/year)', monthlyFee: 150 },
+        { label: 'Adult Restorative (unlimited)', monthlyFee: 250 },
+        { label: 'Adult Hormone Optimization', monthlyFee: 350 },
+        { label: 'Pediatric (first child)', monthlyFee: 75 },
+        { label: 'Pediatric (additional child)', monthlyFee: 50 },
+      ],
+      pricingNotes: 'Integrative/Functional DPC. 10% discount for annual prepay.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Dr. Edward Boland, MD - Augusta, GA
+    practiceName: 'Dr. Edward Boland, MD',
+    website: 'http://drboland.org',
+    city: 'Augusta',
+    state: 'GA',
+    address: '119 Davis Rd, Ste. 4A',
+    zipCode: '30907',
+    phone: '760-504-9321',
+    pricing: {
+      individualMonthly: 50, // 30-49
+      childMonthly: 35, // 0-18
+      familyMonthly: null,
+      enrollmentFee: null,
+      pricingTiers: [
+        { label: 'Ages 0-18', monthlyFee: 35, ageMin: 0, ageMax: 18 },
+        { label: 'Ages 19-29', monthlyFee: 40, ageMin: 19, ageMax: 29 },
+        { label: 'Ages 30-49', monthlyFee: 50, ageMin: 30, ageMax: 49 },
+        { label: 'Ages 50-64', monthlyFee: 60, ageMin: 50, ageMax: 64 },
+        { label: 'Ages 65+', monthlyFee: 70, ageMin: 65, ageMax: 99 },
+      ],
+      pricingNotes: 'Very affordable DPC. Open since 2019.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Direct Primary Care - Spokane, WA
+    practiceName: 'Direct Primary Care Spokane',
+    website: 'https://mydpcclinic.com',
+    city: 'Spokane',
+    state: 'WA',
+    address: '212 E Central Ave, Ste. 360',
+    zipCode: '99207',
+    phone: '509-553-0565',
+    pricing: {
+      individualMonthly: 49, // 27-39
+      childMonthly: 29, // 0-26
+      familyMonthly: null,
+      enrollmentFee: 100,
+      pricingTiers: [
+        { label: 'Ages 0-26', monthlyFee: 29, ageMin: 0, ageMax: 26 },
+        { label: 'Ages 27-39', monthlyFee: 49, ageMin: 27, ageMax: 39 },
+        { label: 'Ages 40-59', monthlyFee: 79, ageMin: 40, ageMax: 59 },
+        { label: 'Ages 60-64', monthlyFee: 109, ageMin: 60, ageMax: 64 },
+      ],
+      pricingNotes: 'Pure DPC. At-cost labs, imaging, and in-house medications.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Midnight Sun Family Medicine - Fairbanks, AK
+    practiceName: 'Midnight Sun Family Medicine',
+    website: 'http://www.msfm.online',
+    city: 'Fairbanks',
+    state: 'AK',
+    address: '4474 Pikes Landing Rd',
+    zipCode: '99709',
+    phone: '907-455-7123',
+    pricing: {
+      individualMonthly: 150,
+      childMonthly: null,
+      familyMonthly: 300,
+      enrollmentFee: null,
+      pricingTiers: [
+        { label: 'Individual', monthlyFee: 150 },
+        { label: 'Couple', monthlyFee: 225 },
+        { label: 'Family', monthlyFee: 300 },
+      ],
+      pricingNotes: "Fairbanks' first DPC clinic. Open since 2017. Annual/biannual/quarterly payment options.",
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // The Doctor's Office at 83 S. Main - Lexington, TN
+    practiceName: "The Doctor's Office at 83 S. Main",
+    website: 'https://www.thedoctorsoffice.me',
+    city: 'Lexington',
+    state: 'TN',
+    address: '83 S Main St',
+    zipCode: '38351',
+    phone: '731-798-5056',
+    pricing: {
+      individualMonthly: 50,
+      childMonthly: 25,
+      familyMonthly: null,
+      enrollmentFee: null,
+      pricingTiers: [
+        { label: 'Adult', monthlyFee: 50 },
+        { label: 'Child', monthlyFee: 25 },
+        { label: 'Child (with adult parent)', monthlyFee: 10 },
+      ],
+      pricingNotes: 'Very affordable rural DPC. Family Medicine. Open since 2018.',
+      pricingConfidence: 'high' as const,
+    },
+  },
 ]
 
 async function saveScrapedPricing() {
