@@ -269,6 +269,238 @@ const scrapedPricing = [
       pricingConfidence: 'high' as const,
     },
   },
+  // ========== DPC Frontier Scraped 2026-01-16 (Batch 2) ==========
+  {
+    // Health and Healing DPC - Los Angeles, CA
+    practiceName: 'Health and Healing DPC',
+    website: 'https://healthandhealingdpc.com',
+    city: 'Los Angeles',
+    state: 'CA',
+    address: '21400 Ventura Blvd, Suite A',
+    zipCode: '91364',
+    phone: '818-434-0660',
+    pricing: {
+      individualMonthly: 89, // >18
+      childMonthly: 39, // 0-18
+      familyMonthly: 199,
+      enrollmentFee: 99,
+      pricingTiers: [
+        { label: '0-18 years', monthlyFee: 39, ageMin: 0, ageMax: 18 },
+        { label: '18+ years', monthlyFee: 89, ageMin: 18, ageMax: 99 },
+        { label: 'Family', monthlyFee: 199 },
+      ],
+      pricingNotes: 'Family Medicine. Open since 2019. Dr. Aimee Ostick, MD.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Island Direct Primary Care - Merritt Island, FL
+    practiceName: 'Island Direct Primary Care',
+    website: 'http://www.islanddirectprimarycare.com',
+    city: 'Merritt Island',
+    state: 'FL',
+    address: '390 N Courtenay Pkwy',
+    zipCode: '32953',
+    phone: '321-392-6226',
+    pricing: {
+      individualMonthly: 125, // Adults 20+
+      childMonthly: null,
+      familyMonthly: 250, // Family of 3
+      enrollmentFee: 50,
+      pricingTiers: [
+        { label: 'Adults 20+', monthlyFee: 125, ageMin: 20, ageMax: 99 },
+        { label: 'Adult + 1 Infant (0-2)', monthlyFee: 200 },
+        { label: 'Adult + 1 Youth (3-19)', monthlyFee: 175 },
+        { label: 'Adult Couple', monthlyFee: 200 },
+        { label: 'Family of 3', monthlyFee: 250 },
+      ],
+      pricingNotes: 'Family Medicine. John Rothwell, DNP/APRN. Open since 2019.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Dr Cranney Family Medicine - Spokane, WA
+    practiceName: 'Dr Cranney Family Medicine',
+    website: 'http://www.drcranney.com',
+    city: 'Spokane',
+    state: 'WA',
+    address: '2020 E 29th Ave, Ste. 235',
+    zipCode: '99203',
+    phone: '509-673-7221',
+    pricing: {
+      individualMonthly: 85, // 30-59
+      childMonthly: 55, // 0-29
+      familyMonthly: 220, // 2 adults + 2 children
+      enrollmentFee: null,
+      pricingTiers: [
+        { label: 'Ages 0-29', monthlyFee: 55, ageMin: 0, ageMax: 29 },
+        { label: 'Ages 30-59', monthlyFee: 85, ageMin: 30, ageMax: 59 },
+        { label: 'Ages 60+', monthlyFee: 115, ageMin: 60, ageMax: 99 },
+        { label: 'Family (2 adults + 2 children)', monthlyFee: 220 },
+      ],
+      pricingNotes: 'Veteran owned. DPC Alliance member. Open since 2019.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Bozeman Primary Care - Bozeman, MT
+    practiceName: 'Bozeman Primary Care',
+    website: 'http://www.bozemanprimarycare.com',
+    city: 'Bozeman',
+    state: 'MT',
+    address: '4535 Valley Commons Drive, Ste. 104',
+    zipCode: '59718',
+    phone: '406-404-1525',
+    pricing: {
+      individualMonthly: 99, // Adults >19
+      childMonthly: 49, // Children <20
+      familyMonthly: 299, // Family >4
+      enrollmentFee: 99,
+      pricingTiers: [
+        { label: 'Children <20', monthlyFee: 49, ageMin: 0, ageMax: 19 },
+        { label: 'Adults >19', monthlyFee: 99, ageMin: 20, ageMax: 99 },
+        { label: 'Spouse/partner', monthlyFee: 79 },
+        { label: 'Family >4', monthlyFee: 299 },
+      ],
+      pricingNotes: 'Hybrid DPC model. Open since 2019.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Bebout Family Medicine - Morganfield, KY
+    practiceName: 'Bebout Family Medicine',
+    website: 'http://beboutfamilymedicine.com',
+    city: 'Morganfield',
+    state: 'KY',
+    address: '332 N Court St',
+    zipCode: '42437',
+    phone: '270-997-4040',
+    pricing: {
+      individualMonthly: 50, // 20-44
+      childMonthly: 35, // 0-19
+      familyMonthly: null,
+      enrollmentFee: null,
+      pricingTiers: [
+        { label: 'Ages 0-19', monthlyFee: 35, ageMin: 0, ageMax: 19 },
+        { label: 'Ages 20-44', monthlyFee: 50, ageMin: 20, ageMax: 44 },
+        { label: 'Ages 45-64', monthlyFee: 75, ageMin: 45, ageMax: 64 },
+        { label: 'Ages 65+', monthlyFee: 100, ageMin: 65, ageMax: 99 },
+      ],
+      pricingNotes: 'Very affordable rural DPC. William Bebout, MD. Open since 2019.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // MK Medical - Las Vegas, NV
+    practiceName: 'MK Medical',
+    website: 'http://www.mkmedicalcare.com',
+    city: 'Las Vegas',
+    state: 'NV',
+    address: '2931 N Tenaya Way, Ste. 102',
+    zipCode: '89128',
+    phone: '702-538-8960',
+    pricing: {
+      individualMonthly: 147, // Adults 18+
+      childMonthly: 47, // With paying adult
+      familyMonthly: 297, // Family of 4
+      enrollmentFee: null,
+      pricingTiers: [
+        { label: 'Prime members (18+)', monthlyFee: 147, ageMin: 18, ageMax: 99 },
+        { label: 'Children with paying adult', monthlyFee: 47, ageMin: 13, ageMax: 17 },
+        { label: 'Family of 4', monthlyFee: 297 },
+      ],
+      pricingNotes: 'Internal Medicine. Ages 13+. Open since 2018. Testosterone replacement $100/mo extra.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Morningstar Medical DPC - Hull, IA
+    practiceName: 'Morningstar Medical DPC',
+    website: 'http://www.morningstarmedicaldpc.com',
+    city: 'Hull',
+    state: 'IA',
+    address: '307 Commerce St., Ste E',
+    zipCode: '51239',
+    phone: '712-550-0246',
+    pricing: {
+      individualMonthly: 50, // 20-44
+      childMonthly: 10, // 0-19 (incredibly low!)
+      familyMonthly: null,
+      enrollmentFee: null,
+      pricingTiers: [
+        { label: '0-19', monthlyFee: 10, ageMin: 0, ageMax: 19 },
+        { label: '20-44', monthlyFee: 50, ageMin: 20, ageMax: 44 },
+        { label: '45-64', monthlyFee: 75, ageMin: 45, ageMax: 64 },
+        { label: '64+', monthlyFee: 100, ageMin: 64, ageMax: 99 },
+      ],
+      pricingNotes: "Siouxland's First DPC! Dr. Lyndle Shelby, MD. Incredibly affordable - $10/mo for children!",
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Avalon Health, Inc. - Savannah, GA
+    practiceName: 'Avalon Health, Inc.',
+    website: 'http://www.avalonhealth.care',
+    city: 'Savannah',
+    state: 'GA',
+    address: '5105 Paulsen St, Ste 141B',
+    zipCode: '31405',
+    phone: '912-999-8899',
+    pricing: {
+      individualMonthly: 75, // 18+
+      childMonthly: null, // Adults only
+      familyMonthly: null,
+      enrollmentFee: 100,
+      pricingTiers: [
+        { label: 'Ages 18+', monthlyFee: 75, ageMin: 18, ageMax: 99 },
+      ],
+      pricingNotes: 'Internal Medicine. 18+ only. Includes yearly physical with Pap, unlimited visits, comprehensive labs. Open since 2017.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Mperial Health - Minneapolis, MN
+    practiceName: 'Mperial Health',
+    website: 'http://mperialhealth.com',
+    city: 'Minneapolis',
+    state: 'MN',
+    address: '7550 France Ave S',
+    zipCode: '55435',
+    phone: '(612) 517-7716',
+    pricing: {
+      individualMonthly: 150,
+      childMonthly: null,
+      familyMonthly: null,
+      enrollmentFee: null,
+      pricingTiers: [
+        { label: 'Individual Membership', monthlyFee: 150 },
+      ],
+      pricingNotes: 'Family Medicine. Dr. Mark Holder, MD. Open every day, all day. Established 2001.',
+      pricingConfidence: 'high' as const,
+    },
+  },
+  {
+    // Endo4Life, PLLC - San Antonio, TX (Specialty DPC)
+    practiceName: 'Endo4Life, PLLC',
+    website: 'https://endo4life.com',
+    city: 'San Antonio',
+    state: 'TX',
+    address: '15303 Huebner Rd, Ste. 15',
+    zipCode: '78248',
+    phone: '210-361-3738',
+    pricing: {
+      individualMonthly: 100, // Diabetes/weight management
+      childMonthly: 50, // Non-diabetes endocrine
+      familyMonthly: null,
+      enrollmentFee: 250,
+      pricingTiers: [
+        { label: 'Diabetes mellitus or weight management', monthlyFee: 100 },
+        { label: 'Endocrine management (non-diabetes, non-weight)', monthlyFee: 50 },
+      ],
+      pricingNotes: 'SPECIALTY DPC: Pediatric Endocrinology. Newborn to 26 years. Robert Ferry, MD. Open since 2018.',
+      pricingConfidence: 'high' as const,
+    },
+  },
 ]
 
 async function saveScrapedPricing() {
