@@ -308,7 +308,6 @@ async function savePractice(practice: PracticeData): Promise<boolean> {
         pricingConfidence: practice.pricing.pricingConfidence,
         pricingScrapedAt: new Date(),
         servicesIncluded: [],
-        dataSource: 'dpc_frontier',
       },
     })
     return true
