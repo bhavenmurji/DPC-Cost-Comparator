@@ -13,7 +13,7 @@
  */
 
 import { PrismaClient } from '@prisma/client'
-import { chromium, Browser, Page } from 'playwright'
+import { chromium, Page } from 'playwright'
 
 const prisma = new PrismaClient()
 
@@ -25,6 +25,13 @@ const offset = args.includes('--offset')
   ? parseInt(args[args.indexOf('--offset') + 1]) || 0
   : 0
 const reportOnly = args.includes('--report')
+
+interface PricingTier {
+  label: string
+  monthlyFee: number
+  ageMin?: number
+  ageMax?: number
+}
 
 interface PracticeData {
   id: string
@@ -42,12 +49,7 @@ interface PracticeData {
     familyMonthly: number | null
     enrollmentFee: number | null
     perVisitFee: number | null
-    pricingTiers: Array<{
-      label: string
-      monthlyFee: number
-      ageMin?: number
-      ageMax?: number
-    }> | null
+    pricingTiers: PricingTier[] | null
     pricingNotes: string | null
     pricingConfidence: 'high' | 'medium' | 'low' | 'none'
   }
@@ -56,17 +58,19 @@ interface PracticeData {
 async function getPracticeIds(page: Page): Promise<string[]> {
   await page.goto('https://mapper.dpcfrontier.com', { waitUntil: 'networkidle' })
 
-  const ids = await page.evaluate(() => {
-    const nextData = document.getElementById('__NEXT_DATA__')
-    if (nextData) {
-      const data = JSON.parse(nextData.textContent || '{}')
-      const practices = data.props?.pageProps?.practices || []
-      return practices.map((p: any) => p.i)
-    }
-    return []
-  })
+  const ids = await page.evaluate(`
+    (function() {
+      var nextData = document.getElementById('__NEXT_DATA__');
+      if (nextData) {
+        var data = JSON.parse(nextData.textContent || '{}');
+        var practices = data.props && data.props.pageProps && data.props.pageProps.practices || [];
+        return practices.map(function(p) { return p.i; });
+      }
+      return [];
+    })()
+  `)
 
-  return ids
+  return ids as string[]
 }
 
 async function scrapePractice(page: Page, practiceId: string): Promise<PracticeData | null> {
@@ -76,132 +80,145 @@ async function scrapePractice(page: Page, practiceId: string): Promise<PracticeD
       timeout: 15000,
     })
 
-    const data = await page.evaluate(() => {
-      const getText = (selector: string): string => {
-        const el = document.querySelector(selector)
-        return el?.textContent?.trim() || ''
-      }
+    // Extract data using string-based evaluate to avoid transpilation issues
+    const rawData = await page.evaluate(`
+      (function() {
+        var title = '';
+        var h1 = document.querySelector('h1');
+        if (h1) title = h1.textContent.trim();
 
-      // Get title (practice name and location)
-      const title = document.querySelector('h1')?.textContent?.trim() || ''
-      const subtitle = document.querySelector('h2')?.textContent?.trim() || ''
+        var subtitle = '';
+        var h2 = document.querySelector('h2');
+        if (h2) subtitle = h2.textContent.trim();
 
-      // Extract location from subtitle "Direct Primary Care in City, ST"
-      const locationMatch = subtitle.match(/in (.+), ([A-Z]{2})/)
-      const city = locationMatch?.[1] || 'Unknown'
-      const state = locationMatch?.[2] || 'Unknown'
+        var city = 'Unknown';
+        var state = 'Unknown';
+        var locationMatch = subtitle.match(/in (.+), ([A-Z]{2})/);
+        if (locationMatch) {
+          city = locationMatch[1];
+          state = locationMatch[2];
+        }
 
-      // Get address from directions link
-      const directionsLink = document.querySelector('a[href*="google.com/maps"]')
-      const addressMatch = directionsLink?.getAttribute('href')?.match(/query=([^&]+)/)
-      const address = addressMatch ? decodeURIComponent(addressMatch[1]).replace(/%2C/g, ',') : ''
+        var address = '';
+        var directionsLink = document.querySelector('a[href*="google.com/maps"]');
+        if (directionsLink) {
+          var href = directionsLink.getAttribute('href');
+          var addressMatch = href.match(/query=([^&]+)/);
+          if (addressMatch) {
+            address = decodeURIComponent(addressMatch[1]).replace(/%2C/g, ',');
+          }
+        }
 
-      // Get website
-      const websiteLink = document.querySelector('a[href^="http"]:not([href*="google.com"]):not([href*="dpcfrontier"])')
-      const website = websiteLink?.getAttribute('href') || null
+        var website = null;
+        var links = document.querySelectorAll('a[href^="http"]');
+        for (var i = 0; i < links.length; i++) {
+          var href = links[i].getAttribute('href');
+          if (href && href.indexOf('google.com') === -1 && href.indexOf('dpcfrontier') === -1) {
+            website = href;
+            break;
+          }
+        }
 
-      // Get phone - look for phone number pattern
-      const pageText = document.body.innerText
-      const phoneMatch = pageText.match(/(\d{3}[-.)]\s*\d{3}[-.)]\s*\d{4}|\(\d{3}\)\s*\d{3}[-.]?\d{4})/)
-      const phone = phoneMatch?.[0] || ''
+        var phone = '';
+        var pageText = document.body.innerText;
+        var phoneMatch = pageText.match(/(\\d{3}[-.)\\s]*\\d{3}[-.)\\s]*\\d{4}|\\(\\d{3}\\)\\s*\\d{3}[-.]?\\d{4})/);
+        if (phoneMatch) phone = phoneMatch[0];
 
-      // Get specialty
-      const specialtySection = Array.from(document.querySelectorAll('*')).find(
-        el => el.textContent?.includes('Specialty') && el.nextElementSibling
-      )
-      const specialty = specialtySection?.nextElementSibling?.textContent?.trim() || 'Family Medicine'
+        var specialty = 'Family Medicine';
+        var allText = document.body.innerText;
+        if (allText.indexOf('Internal Medicine') > -1) specialty = 'Internal Medicine';
+        else if (allText.indexOf('Pediatric') > -1) specialty = 'Pediatrics';
+        else if (allText.indexOf('OB/GYN') > -1) specialty = 'OB/GYN';
 
-      // Extract pricing
-      const pricingSection = document.body.innerText
+        var pricingKnown = false;
+        var tiers = [];
+        var enrollmentFee = null;
+        var perVisitFee = null;
 
-      // Check if pricing is unknown
-      if (pricingSection.includes('Membership prices') && pricingSection.includes('Unknown.')) {
+        if (allText.indexOf('Membership prices') > -1 && allText.indexOf('Unknown.') > -1) {
+          pricingKnown = false;
+        } else {
+          var priceElements = document.querySelectorAll('strong, b');
+          for (var j = 0; j < priceElements.length; j++) {
+            var text = priceElements[j].textContent.trim();
+            var priceMatch = text.match(/\\$(\\d+)/);
+            if (priceMatch) {
+              var price = parseInt(priceMatch[1]);
+              var parent = priceElements[j].parentElement;
+              var fullText = parent ? parent.textContent : '';
+              var labelMatch = fullText.match(/^([^$]+)\\$/);
+              var label = labelMatch ? labelMatch[1].trim() : 'Tier ' + (j + 1);
+
+              var ageMin = null;
+              var ageMax = null;
+              var ageMatch = label.match(/(\\d+)\\s*[-–to]+\\s*(\\d+)/);
+              var singleAgeMatch = label.match(/(\\d+)\\+/);
+              if (ageMatch) {
+                ageMin = parseInt(ageMatch[1]);
+                ageMax = parseInt(ageMatch[2]);
+              } else if (singleAgeMatch) {
+                ageMin = parseInt(singleAgeMatch[1]);
+                ageMax = 99;
+              }
+
+              tiers.push({
+                label: label,
+                monthlyFee: price,
+                ageMin: ageMin,
+                ageMax: ageMax
+              });
+              pricingKnown = true;
+            }
+          }
+
+          var enrollMatch = allText.match(/Enrollment fee[:\\s]*\\*?\\*?\\$(\\d+)/i);
+          if (enrollMatch) enrollmentFee = parseInt(enrollMatch[1]);
+
+          var visitMatch = allText.match(/Per-visit fee[:\\s]*\\*?\\*?\\$(\\d+)/i);
+          if (visitMatch) perVisitFee = parseInt(visitMatch[1]);
+        }
+
         return {
           name: title,
-          website,
-          city,
-          state,
-          address,
-          phone,
-          specialty,
-          pricingKnown: false,
-          tiers: [],
-          enrollmentFee: null,
-          perVisitFee: null,
-        }
-      }
+          website: website,
+          city: city,
+          state: state,
+          address: address,
+          phone: phone,
+          specialty: specialty,
+          pricingKnown: pricingKnown,
+          tiers: tiers,
+          enrollmentFee: enrollmentFee,
+          perVisitFee: perVisitFee
+        };
+      })()
+    `)
 
-      // Parse pricing tiers
-      const tiers: Array<{ label: string; monthlyFee: number; ageMin?: number; ageMax?: number }> = []
-
-      // Look for price patterns: label followed by **$XX** or bold price
-      const priceElements = document.querySelectorAll('strong, b')
-      priceElements.forEach((el, idx) => {
-        const text = el.textContent?.trim() || ''
-        const priceMatch = text.match(/\$(\d+)/)
-        if (priceMatch) {
-          const price = parseInt(priceMatch[1])
-          // Get the label from previous text
-          const parent = el.parentElement
-          const fullText = parent?.textContent || ''
-          const labelMatch = fullText.match(/^([^$]+)\$/)
-          const label = labelMatch?.[1]?.trim() || `Tier ${idx + 1}`
-
-          // Try to extract age range
-          const ageMatch = label.match(/(\d+)\s*[-–to]+\s*(\d+)/)
-          const singleAgeMatch = label.match(/(\d+)\+/)
-
-          tiers.push({
-            label,
-            monthlyFee: price,
-            ageMin: ageMatch ? parseInt(ageMatch[1]) : singleAgeMatch ? parseInt(singleAgeMatch[1]) : undefined,
-            ageMax: ageMatch ? parseInt(ageMatch[2]) : singleAgeMatch ? 99 : undefined,
-          })
-        }
-      })
-
-      // Extract enrollment fee
-      const enrollmentMatch = pricingSection.match(/Enrollment fee[:\s]*\*?\*?\$(\d+)/i)
-      const enrollmentFee = enrollmentMatch ? parseInt(enrollmentMatch[1]) : null
-
-      // Extract per-visit fee
-      const visitMatch = pricingSection.match(/Per-visit fee[:\s]*\*?\*?\$(\d+)/i)
-      const perVisitFee = visitMatch ? parseInt(visitMatch[1]) : null
-
-      return {
-        name: title,
-        website,
-        city,
-        state,
-        address,
-        phone,
-        specialty,
-        pricingKnown: tiers.length > 0,
-        tiers,
-        enrollmentFee,
-        perVisitFee,
-      }
-    })
-
+    const data = rawData as any
     if (!data || !data.name) return null
 
     // Process the extracted data
-    const tiers = data.tiers || []
+    const tiers: PricingTier[] = data.tiers || []
     const adultTier = tiers.find(
-      t =>
+      (t) =>
         t.label.toLowerCase().includes('adult') ||
         t.label.toLowerCase().includes('18+') ||
         t.label.toLowerCase().includes('individual') ||
-        (t.ageMin && t.ageMin >= 18)
+        t.label.toLowerCase().includes('prime') ||
+        (t.ageMin && t.ageMin >= 18 && t.ageMin < 30)
     )
     const childTier = tiers.find(
-      t =>
+      (t) =>
         t.label.toLowerCase().includes('child') ||
         t.label.toLowerCase().includes('0-') ||
         t.label.toLowerCase().includes('pediatric') ||
-        (t.ageMax && t.ageMax <= 18)
+        (t.ageMax && t.ageMax <= 19)
     )
-    const familyTier = tiers.find(t => t.label.toLowerCase().includes('family'))
+    const familyTier = tiers.find((t) => t.label.toLowerCase().includes('family'))
+
+    // Extract zip code from address
+    const zipMatch = data.address.match(/\b(\d{5})(?:-\d{4})?\b/)
+    const zipCode = zipMatch ? zipMatch[1] : '00000'
 
     return {
       id: practiceId,
@@ -210,7 +227,7 @@ async function scrapePractice(page: Page, practiceId: string): Promise<PracticeD
       city: data.city,
       state: data.state,
       address: data.address,
-      zipCode: extractZipCode(data.address) || '00000',
+      zipCode: zipCode,
       phone: data.phone,
       specialty: data.specialty,
       pricing: {
@@ -225,29 +242,25 @@ async function scrapePractice(page: Page, practiceId: string): Promise<PracticeD
       },
     }
   } catch (error) {
-    console.error(`  Error scraping ${practiceId}:`, error)
     return null
   }
-}
-
-function extractZipCode(address: string): string | null {
-  const match = address.match(/\b(\d{5})(?:-\d{4})?\b/)
-  return match?.[1] || null
 }
 
 async function savePractice(practice: PracticeData): Promise<boolean> {
   try {
     // Check if provider already exists
-    const existing = await prisma.dPCProvider.findFirst({
-      where: {
-        OR: [
-          { practiceName: { contains: practice.name, mode: 'insensitive' } },
-          practice.website
-            ? { website: { contains: new URL(practice.website).hostname, mode: 'insensitive' } }
-            : {},
-        ],
-      },
-    })
+    let existing = null
+    try {
+      existing = await prisma.dPCProvider.findFirst({
+        where: {
+          OR: [
+            { practiceName: { contains: practice.name.substring(0, 20), mode: 'insensitive' } },
+          ],
+        },
+      })
+    } catch {
+      // Ignore search errors
+    }
 
     if (existing) {
       // Update if we have pricing and existing doesn't
@@ -300,7 +313,6 @@ async function savePractice(practice: PracticeData): Promise<boolean> {
     })
     return true
   } catch (error) {
-    console.error(`  Error saving ${practice.name}:`, error)
     return false
   }
 }
@@ -344,7 +356,7 @@ async function showReport() {
   console.log(`    Max: $${avgPrice._max.monthlyFee}/month`)
   console.log('')
   console.log('  Top States with Pricing:')
-  byState.forEach(s => {
+  byState.forEach((s) => {
     console.log(`    ${s.state}: ${s._count} providers`)
   })
   console.log('═══════════════════════════════════════════════════════\n')
@@ -408,18 +420,20 @@ async function main() {
         stats.withPricing++
         const saved = await savePractice(practice)
         if (saved) stats.saved++
+        const shortName = practice.name.substring(0, 30).padEnd(30)
         process.stdout.write(
-          `  ${progress} ${practice.name.substring(0, 30).padEnd(30)} $${practice.pricing.individualMonthly}/mo ${saved ? '✓' : '(exists)'}\n`
+          `  ${progress} ${shortName} $${practice.pricing.individualMonthly}/mo ${saved ? '✓' : '(exists)'}\n`
         )
       } else {
         stats.noPricing++
         // Still save the practice even without pricing
         await savePractice(practice)
-        process.stdout.write(`  ${progress} ${practice.name.substring(0, 30).padEnd(30)} - no pricing\n`)
+        const shortName = practice.name.substring(0, 30).padEnd(30)
+        process.stdout.write(`  ${progress} ${shortName} - no pricing\n`)
       }
 
-      // Rate limiting - 1 second between requests
-      await new Promise(r => setTimeout(r, 1000))
+      // Rate limiting - 500ms between requests (faster)
+      await new Promise((r) => setTimeout(r, 500))
 
       // Progress checkpoint every batch
       if ((i + 1) % batchSize === 0) {
@@ -427,7 +441,7 @@ async function main() {
       }
     } catch (error) {
       stats.errors++
-      process.stdout.write(`  ${progress} Error: ${error}\n`)
+      process.stdout.write(`  ${progress} Error\n`)
     }
   }
 
