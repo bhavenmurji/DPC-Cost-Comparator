@@ -55,6 +55,118 @@ interface PracticeData {
   }
 }
 
+// Browser-side extraction script as a plain string to avoid tsx transpilation issues
+const EXTRACT_SCRIPT = `(function() {
+  var title = '';
+  var h1 = document.querySelector('h1');
+  if (h1) title = h1.textContent.trim();
+
+  var subtitle = '';
+  var h2 = document.querySelector('h2');
+  if (h2) subtitle = h2.textContent.trim();
+
+  var city = 'Unknown';
+  var state = 'Unknown';
+  var locationMatch = subtitle.match(/in (.+), ([A-Z]{2})/);
+  if (locationMatch) {
+    city = locationMatch[1];
+    state = locationMatch[2];
+  }
+
+  var address = '';
+  var directionsLink = document.querySelector('a[href*="google.com/maps"]');
+  if (directionsLink) {
+    var href = directionsLink.getAttribute('href');
+    var addressMatch = href.match(/query=([^&]+)/);
+    if (addressMatch) {
+      address = decodeURIComponent(addressMatch[1]).replace(/%2C/g, ',');
+    }
+  }
+
+  var website = null;
+  var links = document.querySelectorAll('a[href^="http"]');
+  for (var i = 0; i < links.length; i++) {
+    var href = links[i].getAttribute('href');
+    if (href && href.indexOf('google.com') === -1 && href.indexOf('dpcfrontier') === -1) {
+      website = href;
+      break;
+    }
+  }
+
+  var phone = '';
+  var pageText = document.body.innerText;
+  var phoneMatch = pageText.match(/(\\d{3}[-.)\\s]*\\d{3}[-.)\\s]*\\d{4}|\\(\\d{3}\\)\\s*\\d{3}[-.]?\\d{4})/);
+  if (phoneMatch) phone = phoneMatch[0];
+
+  var specialty = 'Family Medicine';
+  var allText = document.body.innerText;
+  if (allText.indexOf('Internal Medicine') > -1) specialty = 'Internal Medicine';
+  else if (allText.indexOf('Pediatric') > -1) specialty = 'Pediatrics';
+  else if (allText.indexOf('OB/GYN') > -1) specialty = 'OB/GYN';
+
+  var pricingKnown = false;
+  var tiers = [];
+  var enrollmentFee = null;
+  var perVisitFee = null;
+
+  if (allText.indexOf('Membership prices') > -1 && allText.indexOf('Unknown.') > -1) {
+    pricingKnown = false;
+  } else {
+    var priceElements = document.querySelectorAll('strong, b');
+    for (var j = 0; j < priceElements.length; j++) {
+      var text = priceElements[j].textContent.trim();
+      var priceMatch = text.match(/\\$(\\d+)/);
+      if (priceMatch) {
+        var price = parseInt(priceMatch[1]);
+        var parent = priceElements[j].parentElement;
+        var fullText = parent ? parent.textContent : '';
+        var labelMatch = fullText.match(/^([^$]+)\\$/);
+        var label = labelMatch ? labelMatch[1].trim() : 'Tier ' + (j + 1);
+
+        var ageMin = null;
+        var ageMax = null;
+        var ageMatch = label.match(/(\\d+)\\s*[-to]+\\s*(\\d+)/);
+        var singleAgeMatch = label.match(/(\\d+)\\+/);
+        if (ageMatch) {
+          ageMin = parseInt(ageMatch[1]);
+          ageMax = parseInt(ageMatch[2]);
+        } else if (singleAgeMatch) {
+          ageMin = parseInt(singleAgeMatch[1]);
+          ageMax = 99;
+        }
+
+        tiers.push({
+          label: label,
+          monthlyFee: price,
+          ageMin: ageMin,
+          ageMax: ageMax
+        });
+        pricingKnown = true;
+      }
+    }
+
+    var enrollMatch = allText.match(/Enrollment fee[:\\s]*\\*?\\*?\\$(\\d+)/i);
+    if (enrollMatch) enrollmentFee = parseInt(enrollMatch[1]);
+
+    var visitMatch = allText.match(/Per-visit fee[:\\s]*\\*?\\*?\\$(\\d+)/i);
+    if (visitMatch) perVisitFee = parseInt(visitMatch[1]);
+  }
+
+  return {
+    name: title,
+    website: website,
+    city: city,
+    state: state,
+    address: address,
+    phone: phone,
+    specialty: specialty,
+    pricingKnown: pricingKnown,
+    tiers: tiers,
+    enrollmentFee: enrollmentFee,
+    perVisitFee: perVisitFee
+  };
+})()`
+
 async function getPracticeIds(page: Page): Promise<string[]> {
   await page.goto('https://mapper.dpcfrontier.com', { waitUntil: 'networkidle' })
 
@@ -75,128 +187,28 @@ async function getPracticeIds(page: Page): Promise<string[]> {
 
 async function scrapePractice(page: Page, practiceId: string): Promise<PracticeData | null> {
   try {
-    await page.goto('https://mapper.dpcfrontier.com/practice/' + practiceId, {
+    const url = 'https://mapper.dpcfrontier.com/practice/' + practiceId
+    await page.goto(url, {
       waitUntil: 'networkidle',
       timeout: 15000,
     })
 
-    // Extract data using pure string evaluate to avoid tsx/esbuild __name injection
-    // Using concatenation instead of template literal to ensure no transpilation
-    const extractScript = [
-      '(function() {',
-      (function() {
-        var title = '';
-        var h1 = document.querySelector('h1');
-        if (h1) title = h1.textContent.trim();
+    // Use the pre-defined script string to avoid tsx transpilation issues
+    const rawData = await page.evaluate(EXTRACT_SCRIPT)
+    const data = rawData as {
+      name: string
+      website: string | null
+      city: string
+      state: string
+      address: string
+      phone: string
+      specialty: string
+      pricingKnown: boolean
+      tiers: Array<{ label: string; monthlyFee: number; ageMin: number | null; ageMax: number | null }>
+      enrollmentFee: number | null
+      perVisitFee: number | null
+    }
 
-        var subtitle = '';
-        var h2 = document.querySelector('h2');
-        if (h2) subtitle = h2.textContent.trim();
-
-        var city = 'Unknown';
-        var state = 'Unknown';
-        var locationMatch = subtitle.match(/in (.+), ([A-Z]{2})/);
-        if (locationMatch) {
-          city = locationMatch[1];
-          state = locationMatch[2];
-        }
-
-        var address = '';
-        var directionsLink = document.querySelector('a[href*="google.com/maps"]');
-        if (directionsLink) {
-          var href = directionsLink.getAttribute('href');
-          var addressMatch = href.match(/query=([^&]+)/);
-          if (addressMatch) {
-            address = decodeURIComponent(addressMatch[1]).replace(/%2C/g, ',');
-          }
-        }
-
-        var website = null;
-        var links = document.querySelectorAll('a[href^="http"]');
-        for (var i = 0; i < links.length; i++) {
-          var href = links[i].getAttribute('href');
-          if (href && href.indexOf('google.com') === -1 && href.indexOf('dpcfrontier') === -1) {
-            website = href;
-            break;
-          }
-        }
-
-        var phone = '';
-        var pageText = document.body.innerText;
-        var phoneMatch = pageText.match(/(\\d{3}[-.)\\s]*\\d{3}[-.)\\s]*\\d{4}|\\(\\d{3}\\)\\s*\\d{3}[-.]?\\d{4})/);
-        if (phoneMatch) phone = phoneMatch[0];
-
-        var specialty = 'Family Medicine';
-        var allText = document.body.innerText;
-        if (allText.indexOf('Internal Medicine') > -1) specialty = 'Internal Medicine';
-        else if (allText.indexOf('Pediatric') > -1) specialty = 'Pediatrics';
-        else if (allText.indexOf('OB/GYN') > -1) specialty = 'OB/GYN';
-
-        var pricingKnown = false;
-        var tiers = [];
-        var enrollmentFee = null;
-        var perVisitFee = null;
-
-        if (allText.indexOf('Membership prices') > -1 && allText.indexOf('Unknown.') > -1) {
-          pricingKnown = false;
-        } else {
-          var priceElements = document.querySelectorAll('strong, b');
-          for (var j = 0; j < priceElements.length; j++) {
-            var text = priceElements[j].textContent.trim();
-            var priceMatch = text.match(/\\$(\\d+)/);
-            if (priceMatch) {
-              var price = parseInt(priceMatch[1]);
-              var parent = priceElements[j].parentElement;
-              var fullText = parent ? parent.textContent : '';
-              var labelMatch = fullText.match(/^([^$]+)\\$/);
-              var label = labelMatch ? labelMatch[1].trim() : 'Tier ' + (j + 1);
-
-              var ageMin = null;
-              var ageMax = null;
-              var ageMatch = label.match(/(\\d+)\\s*[-–to]+\\s*(\\d+)/);
-              var singleAgeMatch = label.match(/(\\d+)\\+/);
-              if (ageMatch) {
-                ageMin = parseInt(ageMatch[1]);
-                ageMax = parseInt(ageMatch[2]);
-              } else if (singleAgeMatch) {
-                ageMin = parseInt(singleAgeMatch[1]);
-                ageMax = 99;
-              }
-
-              tiers.push({
-                label: label,
-                monthlyFee: price,
-                ageMin: ageMin,
-                ageMax: ageMax
-              });
-              pricingKnown = true;
-            }
-          }
-
-          var enrollMatch = allText.match(/Enrollment fee[:\\s]*\\*?\\*?\\$(\\d+)/i);
-          if (enrollMatch) enrollmentFee = parseInt(enrollMatch[1]);
-
-          var visitMatch = allText.match(/Per-visit fee[:\\s]*\\*?\\*?\\$(\\d+)/i);
-          if (visitMatch) perVisitFee = parseInt(visitMatch[1]);
-        }
-
-        return {
-          name: title,
-          website: website,
-          city: city,
-          state: state,
-          address: address,
-          phone: phone,
-          specialty: specialty,
-          pricingKnown: pricingKnown,
-          tiers: tiers,
-          enrollmentFee: enrollmentFee,
-          perVisitFee: perVisitFee
-        };
-      })()
-    `)
-
-    const data = rawData as any
     if (!data || !data.name) return null
 
     // Process the extracted data
@@ -239,11 +251,13 @@ async function scrapePractice(page: Page, practiceId: string): Promise<PracticeD
         enrollmentFee: data.enrollmentFee,
         perVisitFee: data.perVisitFee,
         pricingTiers: tiers.length > 0 ? tiers : null,
-        pricingNotes: `Scraped from DPC Frontier. ${data.specialty}.`,
+        pricingNotes: 'Scraped from DPC Frontier. ' + data.specialty + '.',
         pricingConfidence: data.pricingKnown && tiers.length > 0 ? 'high' : 'none',
       },
     }
   } catch (error) {
+    // Log error for debugging
+    console.error('  Error scraping ' + practiceId + ':', error)
     return null
   }
 }
@@ -347,18 +361,18 @@ async function showReport() {
   })
 
   console.log('  Coverage:')
-  console.log(`    Total providers: ${total}`)
-  console.log(`    With verified pricing: ${withPricing} (${((withPricing / total) * 100).toFixed(1)}%)`)
-  console.log(`    From DPC Frontier: ${fromFrontier}`)
+  console.log('    Total providers: ' + total)
+  console.log('    With verified pricing: ' + withPricing + ' (' + ((withPricing / total) * 100).toFixed(1) + '%)')
+  console.log('    From DPC Frontier: ' + fromFrontier)
   console.log('')
   console.log('  Pricing Statistics:')
-  console.log(`    Average: $${Math.round(avgPrice._avg.monthlyFee || 0)}/month`)
-  console.log(`    Min: $${avgPrice._min.monthlyFee}/month`)
-  console.log(`    Max: $${avgPrice._max.monthlyFee}/month`)
+  console.log('    Average: $' + Math.round(avgPrice._avg.monthlyFee || 0) + '/month')
+  console.log('    Min: $' + avgPrice._min.monthlyFee + '/month')
+  console.log('    Max: $' + avgPrice._max.monthlyFee + '/month')
   console.log('')
   console.log('  Top States with Pricing:')
   byState.forEach((s) => {
-    console.log(`    ${s.state}: ${s._count} providers`)
+    console.log('    ' + s.state + ': ' + s._count + ' providers')
   })
   console.log('═══════════════════════════════════════════════════════\n')
 }
@@ -386,12 +400,12 @@ async function main() {
 
   console.log('  Fetching practice IDs from DPC Frontier...')
   const allIds = await getPracticeIds(page)
-  console.log(`  Found ${allIds.length} total practices\n`)
+  console.log('  Found ' + allIds.length + ' total practices\n')
 
   // Apply offset and limit
   const practiceIds = limit ? allIds.slice(offset, offset + limit) : allIds.slice(offset)
-  console.log(`  Processing ${practiceIds.length} practices (offset: ${offset})`)
-  if (limit) console.log(`  (Limited to ${limit} for this run)`)
+  console.log('  Processing ' + practiceIds.length + ' practices (offset: ' + offset + ')')
+  if (limit) console.log('  (Limited to ' + limit + ' for this run)')
   console.log('')
 
   const stats = {
@@ -405,14 +419,14 @@ async function main() {
   const batchSize = 50
   for (let i = 0; i < practiceIds.length; i++) {
     const practiceId = practiceIds[i]
-    const progress = `[${i + 1}/${stats.total}]`
+    const progress = '[' + (i + 1) + '/' + stats.total + ']'
 
     try {
       const practice = await scrapePractice(page, practiceId)
 
       if (!practice) {
         stats.errors++
-        process.stdout.write(`  ${progress} Error\n`)
+        process.stdout.write('  ' + progress + ' Error\n')
         continue
       }
 
@@ -423,26 +437,26 @@ async function main() {
         if (saved) stats.saved++
         const shortName = practice.name.substring(0, 30).padEnd(30)
         process.stdout.write(
-          `  ${progress} ${shortName} $${practice.pricing.individualMonthly}/mo ${saved ? '✓' : '(exists)'}\n`
+          '  ' + progress + ' ' + shortName + ' $' + practice.pricing.individualMonthly + '/mo ' + (saved ? '\u2713' : '(exists)') + '\n'
         )
       } else {
         stats.noPricing++
         // Still save the practice even without pricing
         await savePractice(practice)
         const shortName = practice.name.substring(0, 30).padEnd(30)
-        process.stdout.write(`  ${progress} ${shortName} - no pricing\n`)
+        process.stdout.write('  ' + progress + ' ' + shortName + ' - no pricing\n')
       }
 
-      // Rate limiting - 500ms between requests (faster)
+      // Rate limiting - 500ms between requests
       await new Promise((r) => setTimeout(r, 500))
 
       // Progress checkpoint every batch
       if ((i + 1) % batchSize === 0) {
-        console.log(`\n  --- Checkpoint: ${i + 1}/${stats.total} processed, ${stats.withPricing} with pricing ---\n`)
+        console.log('\n  --- Checkpoint: ' + (i + 1) + '/' + stats.total + ' processed, ' + stats.withPricing + ' with pricing ---\n')
       }
     } catch (error) {
       stats.errors++
-      process.stdout.write(`  ${progress} Error\n`)
+      console.error('  ' + progress + ' Error:', error)
     }
   }
 
@@ -452,11 +466,11 @@ async function main() {
   console.log('\n═══════════════════════════════════════════════════════')
   console.log('  Scraping Complete')
   console.log('═══════════════════════════════════════════════════════')
-  console.log(`  Total processed: ${stats.total}`)
-  console.log(`  With pricing: ${stats.withPricing}`)
-  console.log(`  No pricing: ${stats.noPricing}`)
-  console.log(`  Saved/updated: ${stats.saved}`)
-  console.log(`  Errors: ${stats.errors}`)
+  console.log('  Total processed: ' + stats.total)
+  console.log('  With pricing: ' + stats.withPricing)
+  console.log('  No pricing: ' + stats.noPricing)
+  console.log('  Saved/updated: ' + stats.saved)
+  console.log('  Errors: ' + stats.errors)
   console.log('═══════════════════════════════════════════════════════\n')
 
   await showReport()
