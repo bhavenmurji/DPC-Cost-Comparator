@@ -425,6 +425,22 @@ const styles = {
     marginBottom: '0.5rem',
     color: '#1f2937',
   },
+  verifiedBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.25rem',
+    backgroundColor: '#dcfce7',
+    color: '#166534',
+    padding: '0.25rem 0.5rem',
+    borderRadius: '4px',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    marginBottom: '0.5rem',
+  },
+  verifiedIcon: {
+    color: '#16a34a',
+    fontWeight: '700',
+  },
   providerLocation: {
     fontSize: '0.875rem',
     color: '#6b7280',
