@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 export interface CityProvider {
   id: string
   name: string
+  npi?: string
   city: string
   state: string
   monthlyFee: number
