@@ -187,6 +187,7 @@ router.get('/:id', async (req, res) => {
       provider: {
         id: provider.id,
         name: provider.name,
+        npi: provider.npi,
         address: provider.address,
         city: provider.city,
         state: provider.state,
