@@ -35,7 +35,8 @@
     "fix:dpca:states:test": "tsx ../../scripts/fix-dpca-states.ts --limit 10",
     "fix:dpca:states:dry": "tsx ../../scripts/fix-dpca-states.ts --dry-run",
     "integration:report": "tsx ../../scripts/provider-integration-strategy.ts --report",
-    "fix:dpca:md": "tsx ../../scripts/fix-dpca-md-false-positives.ts"
+    "fix:dpca:md": "tsx ../../scripts/fix-dpca-md-false-positives.ts",
+    "scrape:dpca:browser": "tsx ../../scripts/browser-scrape-missing-dpca.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",
