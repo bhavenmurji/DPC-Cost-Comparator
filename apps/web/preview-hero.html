@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>City Hero Preview - DPC Comparator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            emerald: {
+              100: '#d1fae5',
+              600: '#059669',
+              700: '#047857',
+            },
+            teal: {
+              700: '#0f766e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-100">
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-br from-emerald-600 to-teal-700 py-16 md:py-24 px-4">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+        Direct Primary Care in Chicago
+      </h1>
+      <p class="text-xl md:text-2xl text-emerald-100 mb-6">
+        Midwest affordability meets world-class healthcare
+      </p>
+      <p class="text-lg text-white/90 max-w-2xl mx-auto mb-8">
+        Discover 45+ DPC providers across Chicagoland offering unlimited primary care access
+        for an average of $165/month. Neighborhood-based care with family-friendly practices.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button class="bg-white text-emerald-700 px-8 py-3 rounded-lg font-semibold text-lg hover:bg-emerald-50 transition-colors shadow-lg">
+          Find Chicago Providers
+        </button>
+        <button class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-white/10 transition-colors">
+          Calculate My Costs
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="py-12 px-4 bg-white">
+    <div class="max-w-5xl mx-auto">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="text-center p-6 rounded-xl bg-emerald-50">
+          <div class="text-3xl md:text-4xl font-bold text-emerald-700">45+</div>
+          <div class="text-gray-600 mt-1">DPC Providers</div>
+        </div>
+        <div class="text-center p-6 rounded-xl bg-emerald-50">
+          <div class="text-3xl md:text-4xl font-bold text-emerald-700">$165</div>
+          <div class="text-gray-600 mt-1">Avg Monthly Fee</div>
+        </div>
+        <div class="text-center p-6 rounded-xl bg-emerald-50">
+          <div class="text-3xl md:text-4xl font-bold text-emerald-700">$4,200+</div>
+          <div class="text-gray-600 mt-1">Annual Savings</div>
+        </div>
+        <div class="text-center p-6 rounded-xl bg-emerald-50">
+          <div class="text-3xl md:text-4xl font-bold text-emerald-700">Same Day</div>
+          <div class="text-gray-600 mt-1">Appointments</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits Section -->
+  <section class="py-16 px-4 bg-gray-50">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Why Chicagoans Choose DPC</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div class="text-4xl mb-4">💵</div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Midwest Affordability</h3>
+          <p class="text-gray-600 text-sm">
+            Save $4,200+/year compared to traditional Chicago insurance plans. Get more care for less money.
+          </p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div class="text-4xl mb-4">🏘️</div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Neighborhood Care</h3>
+          <p class="text-gray-600 text-sm">
+            Providers in Lincoln Park, Loop, Wicker Park, and surrounding suburbs. Care that's close to home.
+          </p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div class="text-4xl mb-4">👨‍👩‍👧‍👦</div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Family-Friendly</h3>
+          <p class="text-gray-600 text-sm">
+            Many Chicago DPC providers see entire families—from kids to grandparents. One doctor for everyone.
+          </p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div class="text-4xl mb-4">❄️</div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Year-Round Access</h3>
+          <p class="text-gray-600 text-sm">
+            Text or call your doctor during harsh winters. No need to brave the cold for minor issues.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison with current -->
+  <section class="py-8 px-4 bg-gray-200">
+    <div class="max-w-4xl mx-auto text-center text-gray-500 text-sm">
+      Preview of proposed design — Tailwind CSS
+    </div>
+  </section>
+</body>
+</html>
