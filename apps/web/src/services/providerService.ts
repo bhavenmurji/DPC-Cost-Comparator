@@ -40,6 +40,7 @@ export interface ProviderSearchParams {
 export interface ProviderSearchResult {
   id: string
   name: string
+  npi?: string
   address: string
   city: string
   state: string
