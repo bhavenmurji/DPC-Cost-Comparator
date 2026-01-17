@@ -1,5 +1,3 @@
-// Prisma schema for HealthPartnershipX
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,252 +7,320 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model - Healthcare platform users
 model User {
-  id               String              @id @default(cuid())
-  email            String              @unique
-  passwordHash     String?             // Nullable for OAuth users
-  name             String
-  role             Role                @default(USER)
-  emailVerified    Boolean             @default(false)
-  verificationToken String?            @unique
-  resetToken       String?             @unique
-  resetTokenExpiry DateTime?
-  lastLogin        DateTime?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  comparisons      CostComparison[]
-  userProfiles     UserProfile?
-  medications      UserMedication[]
-  savedComparisons SavedComparison[]
-  claimedProvider  DPCProvider?        // One provider per account
+  id                String            @id @default(cuid())
+  email             String            @unique
+  passwordHash      String?
+  name              String
+  role              Role              @default(USER)
+  emailVerified     Boolean           @default(false)
+  verificationToken String?           @unique
+  resetToken        String?           @unique
+  resetTokenExpiry  DateTime?
+  lastLogin         DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  comparisons       CostComparison[]
+  claimedProvider   DPCProvider?
+  savedComparisons  SavedComparison[]
+  medications       UserMedication[]
+  userProfiles      UserProfile?
 
   @@map("users")
 }
 
-// User profile with health and insurance details
 model UserProfile {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Demographics
-  age                   Int
-  zipCode               String
-  state                 String
-
-  // Current insurance
-  currentInsuranceType  String?  // "employer", "marketplace", "medicaid", etc.
-  currentPremium        Float?
-  currentDeductible     Float?
-  currentOutOfPocket    Float?
-
-  // Health data
-  chronicConditions     String[] // Array of condition codes
-  annualDoctorVisits    Int      @default(4)
-  prescriptionCount     Int      @default(0)
-
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  age                  Int
+  zipCode              String
+  state                String
+  currentInsuranceType String?
+  currentPremium       Float?
+  currentDeductible    Float?
+  currentOutOfPocket   Float?
+  chronicConditions    String[]
+  annualDoctorVisits   Int      @default(4)
+  prescriptionCount    Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
 }
 
-// Cost comparison calculation records
 model CostComparison {
-  id                        String   @id @default(cuid())
-  userId                    String
-  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                      String            @id @default(cuid())
+  userId                  String
+  zipCode                 String
+  age                     Int
+  chronicConditions       String[]
+  annualDoctorVisits      Int
+  prescriptionCount       Int
+  traditionalPremium      Float
+  traditionalDeductible   Float
+  traditionalOutOfPocket  Float
+  traditionalTotalAnnual  Float
+  dpcMonthlyFee           Float
+  dpcAnnualFee            Float
+  catastrophicPremium     Float
+  catastrophicDeductible  Float
+  catastrophicOutOfPocket Float
+  dpcTotalAnnual          Float
+  annualSavings           Float
+  percentageSavings       Float
+  recommendedPlan         PlanType
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  user                    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchedProviders        MatchedProvider[]
 
-  // Input parameters
-  zipCode                   String
-  age                       Int
-  chronicConditions         String[]
-  annualDoctorVisits        Int
-  prescriptionCount         Int
-
-  // Traditional insurance costs
-  traditionalPremium        Float
-  traditionalDeductible     Float
-  traditionalOutOfPocket    Float
-  traditionalTotalAnnual    Float
-
-  // DPC + Catastrophic costs
-  dpcMonthlyFee             Float
-  dpcAnnualFee              Float
-  catastrophicPremium       Float
-  catastrophicDeductible    Float
-  catastrophicOutOfPocket   Float
-  dpcTotalAnnual            Float
-
-  // Results
-  annualSavings             Float
-  percentageSavings         Float
-  recommendedPlan           PlanType
-
-  // Matched DPC providers
-  matchedProviders          MatchedProvider[]
-
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
-
-  @@map("cost_comparisons")
   @@index([userId])
+  @@map("cost_comparisons")
 }
 
-// DPC Provider directory
 model DPCProvider {
-  id                    String                @id @default(cuid())
+  id                  String             @id @default(cuid())
+  claimedByUserId     String?            @unique
+  claimedAt           DateTime?
+  verified            Boolean            @default(false)
+  npi                 String?            @unique
+  name                String
+  practiceName        String
+  address             String
+  city                String
+  state               String
+  zipCode             String
+  latitude            Float?
+  longitude           Float?
+  phone               String
+  email               String?
+  website             String?
+  monthlyFee          Float
+  familyFee           Float?
+  acceptingPatients   Boolean            @default(true)
+  servicesIncluded    String[]
+  patientCapacity     Int?
+  currentPatientCount Int?
+  specialties         String[]
+  boardCertifications String[]
+  languages           String[]
+  rating              Float?
+  reviewCount         Int                @default(0)
+  viewCount           Int                @default(0)
+  contactClickCount   Int                @default(0)
+  websiteClickCount   Int                @default(0)
+  lastViewedAt        DateTime?
+  ribbonHealthId      String?
+  turquoiseHealthId   String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  annualDiscount      String?
+  childMonthlyFee     Float?
+  enrollmentFee       Float?
+  pricingConfidence   String?
+  pricingNotes        String?
+  pricingScrapedAt    DateTime?
+  pricingTiers        Json?
+  providerSource      DPCProviderSource?
+  claimedBy           User?              @relation(fields: [claimedByUserId], references: [id])
+  matchedProviders    MatchedProvider[]
 
-  // Claimed account (optional - providers can claim their listing)
-  claimedByUserId       String?               @unique
-  claimedBy             User?                 @relation(fields: [claimedByUserId], references: [id], onDelete: SetNull)
-  claimedAt             DateTime?
-  verified              Boolean               @default(false)
-
-  // Provider details
-  npi                   String?               @unique
-  name                  String
-  practiceName          String
-
-  // Location
-  address               String
-  city                  String
-  state                 String
-  zipCode               String
-  latitude              Float?
-  longitude             Float?
-
-  // Contact
-  phone                 String
-  email                 String?
-  website               String?
-
-  // DPC details - Pricing
-  monthlyFee            Float
-  childMonthlyFee       Float?                // Pediatric/child monthly fee
-  familyFee             Float?                // Family/household monthly fee
-  enrollmentFee         Float?                // One-time enrollment/onboarding fee
-  annualDiscount        String?               // e.g., "2 months free" or "10%"
-  pricingTiers          Json?                 // Age-based or visit-based tiers
-  pricingNotes          String?               // Additional pricing context
-  pricingConfidence     String?               // "high", "medium", "low", "none"
-  pricingScrapedAt      DateTime?             // When pricing was last scraped
-
-  // DPC details - Practice
-  acceptingPatients     Boolean               @default(true)
-  servicesIncluded      String[]
-  patientCapacity       Int?                  // Total patient capacity
-  currentPatientCount   Int?                  // Current number of patients
-
-  // Specialties and certifications
-  specialties           String[]
-  boardCertifications   String[]
-  languages             String[]
-
-  // Ratings
-  rating                Float?
-  reviewCount           Int                   @default(0)
-
-  // Analytics (for claimed providers)
-  viewCount             Int                   @default(0)
-  contactClickCount     Int                   @default(0)
-  websiteClickCount     Int                   @default(0)
-  lastViewedAt          DateTime?
-
-  // Integration
-  ribbonHealthId        String?
-  turquoiseHealthId     String?
-
-  matchedProviders      MatchedProvider[]
-  providerSource        DPCProviderSource?
-
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-
-  @@map("dpc_providers")
   @@index([zipCode])
   @@index([state])
   @@index([claimedByUserId])
+  @@map("dpc_providers")
 }
 
-// Matched provider results for a comparison
 model MatchedProvider {
-  id                    String          @id @default(cuid())
-  comparisonId          String
-  comparison            CostComparison  @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  id            String         @id @default(cuid())
+  comparisonId  String
+  providerId    String
+  distanceMiles Float
+  matchScore    Float
+  createdAt     DateTime       @default(now())
+  comparison    CostComparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  provider      DPCProvider    @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
-  providerId            String
-  provider              DPCProvider     @relation(fields: [providerId], references: [id], onDelete: Cascade)
-
-  distanceMiles         Float
-  matchScore            Float           // 0-100 score based on location, specialties, etc.
-
-  createdAt             DateTime        @default(now())
-
-  @@map("matched_providers")
   @@index([comparisonId])
+  @@map("matched_providers")
 }
 
-// Insurance plan templates for calculations
 model InsurancePlan {
-  id                    String      @id @default(cuid())
+  id                String   @id @default(cuid())
+  planType          PlanType
+  planName          String
+  carrier           String
+  state             String
+  availableZipCodes String[]
+  monthlyPremium    Float
+  annualDeductible  Float
+  maxOutOfPocket    Float
+  primaryCareVisits Int?
+  specialistVisits  Int?
+  prescriptionTier1 Float?
+  prescriptionTier2 Float?
+  prescriptionTier3 Float?
+  ageMin            Int?
+  ageMax            Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  planType              PlanType
-  planName              String
-  carrier               String
-
-  // Location
-  state                 String
-  availableZipCodes     String[]
-
-  // Costs
-  monthlyPremium        Float
-  annualDeductible      Float
-  maxOutOfPocket        Float
-
-  // Coverage details
-  primaryCareVisits     Int?        // Visits covered before deductible
-  specialistVisits      Int?
-  prescriptionTier1     Float?      // Generic copay
-  prescriptionTier2     Float?      // Preferred brand
-  prescriptionTier3     Float?      // Non-preferred brand
-
-  // Metadata
-  ageMin                Int?
-  ageMax                Int?
-
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
-
-  @@map("insurance_plans")
   @@index([state])
   @@index([planType])
+  @@map("insurance_plans")
 }
 
-// Audit log for HIPAA compliance
 model AuditLog {
-  id            String      @id @default(cuid())
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
 
-  userId        String?
-  action        String      // "view", "create", "update", "delete", "export"
-  resource      String      // "comparison", "profile", "provider"
-  resourceId    String?
-
-  ipAddress     String?
-  userAgent     String?
-
-  metadata      Json?       // Additional context
-
-  createdAt     DateTime    @default(now())
-
-  @@map("audit_logs")
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+  @@map("audit_logs")
 }
 
-// Role enumeration
+model PrescriptionPrice {
+  id              String      @id @default(cuid())
+  drugName        String
+  genericName     String?
+  dosage          String
+  form            String
+  quantity        Int
+  zipCode         String
+  pharmacyName    String
+  pharmacyAddress String?
+  price           Float
+  memberPrice     Float?
+  couponPrice     Float?
+  couponUrl       String?
+  source          PriceSource
+  sourceId        String?
+  cachedAt        DateTime    @default(now())
+  expiresAt       DateTime
+  ndc             String?     @unique
+
+  @@index([drugName, zipCode])
+  @@index([expiresAt])
+  @@map("prescription_prices")
+}
+
+model LabTestPrice {
+  id                String      @id @default(cuid())
+  testName          String
+  cptCode           String?
+  loincCode         String?
+  category          String?
+  retailPrice       Float?
+  cashPrice         Float
+  dpcPrice          Float?
+  insuranceEstimate Float?
+  labProvider       LabProvider
+  labLocation       String?
+  lastUpdated       DateTime    @default(now())
+  verified          Boolean     @default(false)
+
+  @@index([testName])
+  @@index([cptCode])
+  @@map("lab_test_prices")
+}
+
+model PharmacySavingsProgram {
+  id                 String                      @id @default(cuid())
+  programName        String
+  pharmacyChain      String
+  programType        ProgramType
+  requiresMembership Boolean                     @default(false)
+  membershipCost     Float?
+  membershipUrl      String?
+  active             Boolean                     @default(true)
+  lastVerified       DateTime                    @default(now())
+  medications        PharmacySavingsMedication[]
+
+  @@map("pharmacy_savings_programs")
+}
+
+model PharmacySavingsMedication {
+  id          String                 @id @default(cuid())
+  programId   String
+  drugName    String
+  genericName String
+  dosage      String
+  form        String
+  price30Day  Float?
+  price60Day  Float?
+  price90Day  Float?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  program     PharmacySavingsProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([programId])
+  @@index([drugName])
+  @@map("pharmacy_savings_medications")
+}
+
+model DPCProviderSource {
+  id               String      @id @default(cuid())
+  providerId       String      @unique
+  source           String
+  sourceUrl        String?
+  sourceId         String?
+  verified         Boolean     @default(false)
+  lastScraped      DateTime?
+  lastVerified     DateTime?
+  dataQualityScore Float?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  provider         DPCProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@map("dpc_provider_sources")
+}
+
+model UserMedication {
+  id              String   @id @default(cuid())
+  userId          String
+  drugName        String
+  dosage          String
+  frequency       String
+  quantity        Int
+  currentCost     Float?
+  lowestCashPrice Float?
+  insurancePrice  Float?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_medications")
+}
+
+model SavedComparison {
+  id             String   @id @default(cuid())
+  userId         String
+  comparisonData Json
+  name           String?
+  notes          String?
+  favorite       Boolean  @default(false)
+  sharedPublicly Boolean  @default(false)
+  shareToken     String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([shareToken])
+  @@map("saved_comparisons")
+}
+
 enum Role {
   ADMIN
   PROVIDER
@@ -262,198 +328,6 @@ enum Role {
   USER
 }
 
-// Prescription pricing cache (GoodRx, Costco, Walmart)
-model PrescriptionPrice {
-  id                String      @id @default(cuid())
-
-  // Drug identification
-  ndc               String?     @unique // National Drug Code
-  drugName          String      // Standardized drug name
-  genericName       String?     // Generic equivalent
-  dosage            String      // "10mg", "500mg", etc.
-  form              String      // "tablet", "capsule", "liquid"
-  quantity          Int         // 30, 60, 90 day supply
-
-  // Location
-  zipCode           String
-  pharmacyName      String      // "CVS", "Walgreens", "Costco", "Walmart"
-  pharmacyAddress   String?
-
-  // Pricing
-  price             Float       // Cash price
-  memberPrice       Float?      // Membership price (Costco)
-  couponPrice       Float?      // GoodRx coupon price
-  couponUrl         String?     // Direct link to coupon
-
-  // Data source
-  source            PriceSource // Where the price came from
-  sourceId          String?     // External ID from source
-
-  // Cache management
-  cachedAt          DateTime    @default(now())
-  expiresAt         DateTime    // Typically 7-30 days
-
-  @@map("prescription_prices")
-  @@index([drugName, zipCode])
-  @@index([expiresAt])
-}
-
-// Lab test pricing (LabCorp, Quest, etc.)
-model LabTestPrice {
-  id                String      @id @default(cuid())
-
-  // Test identification
-  testName          String      // "Basic Metabolic Panel", "CBC"
-  cptCode           String?     // CPT billing code
-  loincCode         String?     // LOINC standard code
-  category          String?     // "Blood", "Urine", "Imaging"
-
-  // Pricing
-  retailPrice       Float?      // Standard price
-  cashPrice         Float       // Self-pay price
-  dpcPrice          Float?      // DPC affiliate price
-  insuranceEstimate Float?      // Typical insurance cost
-
-  // Provider
-  labProvider       LabProvider // LabCorp, Quest, etc.
-  labLocation       String?     // City, State
-
-  // Data freshness
-  lastUpdated       DateTime    @default(now())
-  verified          Boolean     @default(false)
-
-  @@map("lab_test_prices")
-  @@index([testName])
-  @@index([cptCode])
-}
-
-// Pharmacy savings programs (Walmart $4, manufacturer coupons)
-model PharmacySavingsProgram {
-  id                String      @id @default(cuid())
-
-  // Program details
-  programName       String      // "Walmart $4", "Costco Membership"
-  pharmacyChain     String      // "Walmart", "Costco", "Kroger"
-  programType       ProgramType
-
-  // Eligibility
-  requiresMembership Boolean    @default(false)
-  membershipCost     Float?     // Annual cost if required
-  membershipUrl      String?
-
-  // Covered medications
-  medications        PharmacySavingsMedication[]
-
-  // Program status
-  active             Boolean    @default(true)
-  lastVerified       DateTime   @default(now())
-
-  @@map("pharmacy_savings_programs")
-}
-
-// Medications covered by savings programs
-model PharmacySavingsMedication {
-  id                String                  @id @default(cuid())
-
-  programId         String
-  program           PharmacySavingsProgram  @relation(fields: [programId], references: [id], onDelete: Cascade)
-
-  // Medication
-  drugName          String
-  genericName       String
-  dosage            String
-  form              String
-
-  // Pricing
-  price30Day        Float?
-  price60Day        Float?
-  price90Day        Float?
-
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
-
-  @@map("pharmacy_savings_medications")
-  @@index([programId])
-  @@index([drugName])
-}
-
-// DPC Provider data source tracking
-model DPCProviderSource {
-  id                String      @id @default(cuid())
-
-  providerId        String      @unique
-  provider          DPCProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-
-  // Source information
-  source            String      // "dpc_frontier", "atlas_md", "manual"
-  sourceUrl         String?     // Original listing URL
-  sourceId          String?     // External ID
-
-  // Data quality
-  verified          Boolean     @default(false)
-  lastScraped       DateTime?
-  lastVerified      DateTime?
-  dataQualityScore  Float?      // 0-100
-
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  @@map("dpc_provider_sources")
-}
-
-// User saved medications list
-model UserMedication {
-  id                String      @id @default(cuid())
-
-  userId            String
-  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Medication details
-  drugName          String
-  dosage            String
-  frequency         String      // "daily", "twice daily", etc.
-  quantity          Int         // Monthly quantity
-
-  // Cost tracking
-  currentCost       Float?
-  lowestCashPrice   Float?
-  insurancePrice    Float?
-
-  active            Boolean     @default(true)
-
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  @@map("user_medications")
-  @@index([userId])
-}
-
-// User saved comparisons
-model SavedComparison {
-  id                String      @id @default(cuid())
-
-  userId            String
-  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Comparison snapshot
-  comparisonData    Json        // Full comparison result
-  name              String?     // User-given name
-  notes             String?
-
-  // Metadata
-  favorite          Boolean     @default(false)
-  sharedPublicly    Boolean     @default(false)
-  shareToken        String?     @unique
-
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  @@map("saved_comparisons")
-  @@index([userId])
-  @@index([shareToken])
-}
-
-// Plan type enumeration
 enum PlanType {
   TRADITIONAL
   DPC_CATASTROPHIC
@@ -463,7 +337,6 @@ enum PlanType {
   EPO
 }
 
-// Prescription price source
 enum PriceSource {
   GOODRX
   COSTCO
@@ -475,7 +348,6 @@ enum PriceSource {
   NADAC
 }
 
-// Lab provider
 enum LabProvider {
   LABCORP
   QUEST
@@ -485,10 +357,9 @@ enum LabProvider {
   OTHER
 }
 
-// Pharmacy savings program type
 enum ProgramType {
-  GENERIC_DISCOUNT      // Walmart $4, Kroger generics
-  MEMBERSHIP_DISCOUNT   // Costco
-  MANUFACTURER_COUPON   // Brand-name assistance
-  PATIENT_ASSISTANCE    // Low-income programs
+  GENERIC_DISCOUNT
+  MEMBERSHIP_DISCOUNT
+  MANUFACTURER_COUPON
+  PATIENT_ASSISTANCE
 }
