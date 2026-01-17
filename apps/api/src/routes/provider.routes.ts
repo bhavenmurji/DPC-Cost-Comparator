@@ -114,6 +114,7 @@ router.get('/search', async (req, res) => {
       providers: providers.map((p) => ({
         id: p.id,
         name: p.name,
+        npi: p.npi,
         address: p.address,
         city: p.city,
         state: p.state,
