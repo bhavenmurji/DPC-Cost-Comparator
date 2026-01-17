@@ -36,7 +36,9 @@
     "fix:dpca:states:dry": "tsx ../../scripts/fix-dpca-states.ts --dry-run",
     "integration:report": "tsx ../../scripts/provider-integration-strategy.ts --report",
     "fix:dpca:md": "tsx ../../scripts/fix-dpca-md-false-positives.ts",
-    "scrape:dpca:browser": "tsx ../../scripts/browser-scrape-missing-dpca.ts"
+    "scrape:dpca:browser": "tsx ../../scripts/browser-scrape-missing-dpca.ts",
+    "geocode:missing": "tsx ../../scripts/geocode-missing-coords.ts",
+    "geocode:missing:test": "tsx ../../scripts/geocode-missing-coords.ts --limit 10"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",
