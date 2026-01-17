@@ -115,6 +115,11 @@ export default function ChicagoDPC() {
             {providers.map((provider) => (
               <div key={provider.id} style={styles.providerCard}>
                 <h3 style={styles.providerName}>{provider.name}</h3>
+                {provider.npi && (
+                  <p style={styles.verifiedBadge}>
+                    <span style={styles.verifiedIcon}>✓</span> NPI Verified
+                  </p>
+                )}
                 <p style={styles.providerLocation}>
                   {provider.city}, {provider.state}
                 </p>
