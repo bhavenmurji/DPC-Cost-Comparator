@@ -131,6 +131,14 @@ export default function ProviderDetails() {
               {provider.practiceName && (
                 <p className="text-lg text-gray-600">{provider.practiceName}</p>
               )}
+              {provider.npi && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <span className="mr-1">✓</span> NPI Verified
+                  </span>
+                  <span className="text-sm text-gray-500">NPI: {provider.npi}</span>
+                </div>
+              )}
               {distance !== null && (
                 <p className="text-sm text-gray-500 mt-2">
                   📍 {distance.toFixed(1)} miles from your location
