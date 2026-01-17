@@ -112,7 +112,8 @@ class ProviderService {
   }
 
   async getProviderById(id: string): Promise<Provider> {
-    return apiClient.get<Provider>(`/api/providers/${id}`)
+    const response = await apiClient.get<{ success: boolean; provider: Provider }>(`/api/providers/${id}`)
+    return response.provider
   }
 
   async getProviderStats(): Promise<ProviderStatsResponse> {
