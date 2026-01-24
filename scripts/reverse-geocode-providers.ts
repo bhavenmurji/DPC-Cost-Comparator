@@ -4,7 +4,7 @@ import axios from 'axios';
 const prisma = new PrismaClient();
 
 // Google Maps API key from environment
-const GOOGLE_MAPS_API_KEY = 'AIzaSyCHdZPXfSjHhsbOaMCbu-anfeOzeeOLJnU';
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || '';
 const RATE_LIMIT_DELAY = 1000; // 1 second between requests
 const RETRY_DELAY = 5000; // 5 seconds on rate limit
 const MAX_RETRIES = 3;
