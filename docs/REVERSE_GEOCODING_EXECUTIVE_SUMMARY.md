@@ -50,7 +50,7 @@ Rate Limit: 1 request/second
 Timeout: 10 seconds per request
 ```
 
-**API Key:** `AIzaSyCHdZPXfSjHhsbOaMCbu-anfeOzeeOLJnU` (from apps/web/.env)
+**API Key:** `[REDACTED - see .env]`
 
 ### Data Extraction Logic
 
