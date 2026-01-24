@@ -5,8 +5,13 @@
 
 import axios from 'axios'
 
-const API_KEY = '1Uewbc3gQgNSSqszbBmBSlTF30Xk6YwQ'
+const API_KEY = process.env.HEALTHCARE_GOV_API_KEY || ''
 const BASE_URL = 'https://marketplace.api.healthcare.gov/api/v1'
+
+if (!API_KEY) {
+  console.error('HEALTHCARE_GOV_API_KEY environment variable is required')
+  process.exit(1)
+}
 
 async function testHealthcareGovAPI() {
   console.log('🔍 Testing Healthcare.gov API directly...\n')
