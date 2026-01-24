@@ -5,11 +5,11 @@
 
 import axios from 'axios'
 
-const API_KEY = process.env.HEALTHCARE_GOV_API_KEY || ''
+const API_KEY = process.env.CMS_MARKETPLACE_API_KEY || ''
 const BASE_URL = 'https://marketplace.api.healthcare.gov/api/v1'
 
 if (!API_KEY) {
-  console.error('HEALTHCARE_GOV_API_KEY environment variable is required')
+  console.error('CMS_MARKETPLACE_API_KEY environment variable is required')
   process.exit(1)
 }
 
