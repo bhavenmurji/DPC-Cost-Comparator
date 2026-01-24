@@ -58,7 +58,7 @@ labTestCosts: moneySchema
 
 2. **apps/web/.env.local** (Created)
    - Added `VITE_API_URL=http://localhost:4000`
-   - Added `VITE_GOOGLE_MAPS_API_KEY=AIzaSyCHdZPXfSjHhsbOaMCbu-anfeOzeeOLJnU`
+   - Added `VITE_GOOGLE_MAPS_API_KEY=[REDACTED - see .env]`
    - Note: Vite prefers `.env.local` over `.env` for local development
 
 ---
