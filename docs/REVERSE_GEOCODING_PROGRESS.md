@@ -85,7 +85,7 @@ The following fields are being updated in the `dpc_providers` table:
 Using Google Maps Reverse Geocoding API:
 - Endpoint: `https://maps.googleapis.com/maps/api/geocode/json`
 - Input: `latlng=<latitude>,<longitude>`
-- API Key: `AIzaSyCHdZPXfSjHhsbOaMCbu-anfeOzeeOLJnU`
+- API Key: `[REDACTED - see .env]`
 - Response: Address components extracted from `results[0].address_components`
 
 ### Error Handling
